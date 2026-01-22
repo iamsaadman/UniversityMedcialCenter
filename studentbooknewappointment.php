@@ -1,8 +1,46 @@
 <?php
-// Example doctors array
-$doctors = [
-    ['name' => 'Dr. John Smith', 'department' => 'Cardiology']
-];
+session_start();
+require_once __DIR__ . '/includes/dp.php';
+
+// Check if user is logged in and is a student
+if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'student') {
+    header('Location: login.php');
+    exit;
+}
+
+// Fetch available doctors from users table where role is 'doctor'
+$doctorsResult = $mysqli->query('
+    SELECT id, fullname 
+    FROM users 
+    WHERE role = \'doctor\' 
+    ORDER BY fullname
+');
+$doctors = [];
+if ($doctorsResult) {
+    while ($row = $doctorsResult->fetch_assoc()) {
+        $doctors[] = $row;
+    }
+}
+
+// Get success/error messages
+$message = '';
+$messageType = '';
+if (isset($_GET['success']) && $_GET['success'] === '1') {
+    $message = 'Appointment booked successfully!';
+    $messageType = 'success';
+} elseif (isset($_GET['error'])) {
+    $error = $_GET['error'];
+    if ($error === 'invalid') {
+        $message = 'Please fill all required fields correctly.';
+    } elseif ($error === 'past_date') {
+        $message = 'Cannot book appointments for past dates.';
+    } elseif ($error === 'db') {
+        $message = 'Database error. Please try again later.';
+    } else {
+        $message = 'An error occurred. Please try again.';
+    }
+    $messageType = 'error';
+}
 ?>
 
 <!DOCTYPE html>
@@ -31,74 +69,83 @@ $doctors = [
 <!-- MAIN CONTENT -->
 <div class="p-6">
 
+  <!-- Success/Error Message -->
+  <?php if ($message): ?>
+    <div class="mb-6 p-4 rounded-xl <?php echo $messageType === 'success' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'; ?>">
+      <?php echo htmlspecialchars($message); ?>
+    </div>
+  <?php endif; ?>
+
   <!-- Header Card -->
   <div class="bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-2xl p-6 shadow-xl mb-6">
     <h2 class="text-2xl font-bold mb-2">Schedule Your New Appointment</h2>
     <p>Select a doctor, date, and time that works best for you.</p>
   </div>
 
-  <!-- Step 1: Select Doctor -->
-  <div class="bg-white rounded-2xl p-6 shadow-md mb-6">
-    <h3 class="font-semibold text-gray-800 mb-3">Step 1: Select a Doctor</h3>
-    <div class="space-y-3">
-      <?php foreach ($doctors as $doctor): ?>
-        <label class="flex items-center gap-3 p-3 border rounded-lg hover:bg-blue-50 cursor-pointer">
-          <input type="radio" name="doctor" value="<?php echo $doctor['name']; ?>" class="accent-blue-500">
-          <div>
-            <p class="font-semibold"><?php echo $doctor['name']; ?></p>
-            <p class="text-gray-500 text-sm"><?php echo $doctor['department']; ?></p>
-          </div>
-        </label>
-      <?php endforeach; ?>
-    </div>
-  </div>
+  <!-- Appointment Form -->
+  <form action="appointment_process.php" method="POST" class="space-y-6" id="appointmentForm">
 
-  <!-- Step 2: Select Date -->
-  <div class="bg-white rounded-2xl p-6 shadow-md mb-6">
-    <h3 class="font-semibold text-gray-800 mb-3">Step 2: Select Date</h3>
-    <input type="date" name="appointment_date" class="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-500">
-  </div>
-
-  <!-- Step 3: Select Time -->
-  <div class="bg-white rounded-2xl p-6 shadow-md mb-6">
-    <h3 class="font-semibold text-gray-800 mb-3">Step 3: Select Time</h3>
-    <div class="grid grid-cols-3 md:grid-cols-4 gap-3">
-      <?php
-      $startHour = 9;
-      $endHour = 16;
-      $minutes = ['00', '30'];
-      foreach(range($startHour, $endHour) as $h) {
-          foreach($minutes as $m) {
-              $time = sprintf("%02d:%s", $h, $m);
-              echo "<button type='button' class='py-2 px-3 rounded-lg border border-blue-300 hover:bg-blue-50 text-gray-700'>$time</button>";
-          }
-      }
-      ?>
-    </div>
-  </div>
-
-  <!-- Appointment Summary -->
-  <div class="bg-white rounded-2xl p-6 shadow-md mb-6">
-    <h3 class="font-semibold text-gray-800 mb-3">Appointment Summary</h3>
-    <div class="mb-3">
-      <label class="block text-gray-700 mb-1">Reason for Visit</label>
-      <input type="text" name="reason" placeholder="Describe your reason" class="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-500">
-    </div>
-    <div class="mb-3">
-      <label class="block text-gray-700 mb-1">Additional Notes (Optional)</label>
-      <textarea name="notes" placeholder="Any additional notes" class="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-500"></textarea>
+    <!-- Step 1: Select Doctor -->
+    <div class="bg-white rounded-2xl p-6 shadow-md">
+      <h3 class="font-semibold text-gray-800 mb-3">Step 1: Select a Doctor</h3>
+      <?php if (!empty($doctors)): ?>
+        <div class="space-y-3">
+          <?php foreach ($doctors as $doctor): ?>
+            <label class="flex items-center gap-3 p-3 border rounded-lg hover:bg-blue-50 cursor-pointer">
+              <input type="radio" name="doctor_id" value="<?php echo (int)$doctor['id']; ?>" class="accent-blue-500" required>
+              <div>
+                <p class="font-semibold"><?php echo htmlspecialchars($doctor['fullname']); ?></p>
+              </div>
+            </label>
+          <?php endforeach; ?>
+        </div>
+      <?php else: ?>
+        <p class="text-gray-600">No doctors available at the moment.</p>
+      <?php endif; ?>
     </div>
 
-    <!-- Your Selection Card -->
-    <div class="bg-gray-100 p-4 rounded-lg mb-3">
-      <p><strong>Doctor:</strong> Not Selected</p>
-      <p><strong>Date:</strong> Not Selected</p>
-      <p><strong>Time:</strong> Not Selected</p>
+    <!-- Step 2: Select Date -->
+    <div class="bg-white rounded-2xl p-6 shadow-md">
+      <h3 class="font-semibold text-gray-800 mb-3">Step 2: Select Date</h3>
+      <input type="date" name="appointment_date" id="appointmentDate" class="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-500" required>
+      <p class="text-gray-500 text-sm mt-2">Select a date at least 1 day from now</p>
     </div>
 
-    <!-- Confirm Button -->
-    <button class="bg-blue-600 text-white py-3 px-6 rounded-xl font-semibold hover:bg-blue-700 transition">Confirm Appointment</button>
-  </div>
+    <!-- Step 3: Select Time -->
+    <div class="bg-white rounded-2xl p-6 shadow-md">
+      <h3 class="font-semibold text-gray-800 mb-3">Step 3: Select Time</h3>
+      <div class="grid grid-cols-3 md:grid-cols-4 gap-3" id="timeSlots">
+        <!-- Generated by JavaScript -->
+      </div>
+      <input type="hidden" name="appointment_time" id="selectedTime" required>
+    </div>
+
+    <!-- Appointment Summary -->
+    <div class="bg-white rounded-2xl p-6 shadow-md">
+      <h3 class="font-semibold text-gray-800 mb-3">Appointment Summary</h3>
+      
+      <div class="mb-3">
+        <label class="block text-gray-700 mb-1 font-semibold">Reason for Visit <span class="text-red-500">*</span></label>
+        <input type="text" name="reason_for_visit" placeholder="Describe your reason for the appointment" class="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-500" maxlength="255" required>
+      </div>
+
+      <div class="mb-4">
+        <label class="block text-gray-700 mb-1">Additional Notes (Optional)</label>
+        <textarea name="notes" placeholder="Any additional information for the doctor" class="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-500" maxlength="1000"></textarea>
+      </div>
+
+      <!-- Your Selection Card -->
+      <div class="bg-gray-100 p-4 rounded-lg mb-4">
+        <p><strong>Doctor:</strong> <span id="summaryDoctor">Not Selected</span></p>
+        <p><strong>Date:</strong> <span id="summaryDate">Not Selected</span></p>
+        <p><strong>Time:</strong> <span id="summaryTime">Not Selected</span></p>
+      </div>
+
+      <!-- Confirm Button -->
+      <button type="submit" class="w-full bg-blue-600 text-white py-3 px-6 rounded-xl font-semibold hover:bg-blue-700 transition">Confirm Appointment</button>
+    </div>
+
+  </form>
 
 </div>
 
@@ -121,6 +168,107 @@ $doctors = [
   </div>
   <div class="text-center text-sm">&copy; 2026 University Medical Center. All rights reserved.</div>
 </footer>
+
+<script>
+  // Get doctor info from database result
+  const doctors = <?php echo json_encode($doctors); ?>;
+  
+  // Generate time slots
+  function generateTimeSlots() {
+    const startHour = 9;
+    const endHour = 16;
+    const minutes = ['00', '30'];
+    const container = document.getElementById('timeSlots');
+    container.innerHTML = '';
+    
+    for (let h = startHour; h <= endHour; h++) {
+      for (let m of minutes) {
+        const time = `${String(h).padStart(2, '0')}:${m}`;
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'py-2 px-3 rounded-lg border border-blue-300 hover:bg-blue-50 text-gray-700 transition';
+        button.textContent = time;
+        button.onclick = (e) => selectTime(e, time);
+        container.appendChild(button);
+      }
+    }
+  }
+
+  // Select time slot
+  function selectTime(e, time) {
+    e.preventDefault();
+    document.getElementById('selectedTime').value = time;
+    
+    // Update button styles
+    document.querySelectorAll('#timeSlots button').forEach(btn => {
+      btn.classList.remove('bg-blue-600', 'text-white', 'border-blue-600');
+      btn.classList.add('border-blue-300', 'hover:bg-blue-50', 'text-gray-700');
+    });
+    
+    e.target.classList.add('bg-blue-600', 'text-white', 'border-blue-600');
+    e.target.classList.remove('border-blue-300', 'hover:bg-blue-50', 'text-gray-700');
+    
+    updateSummary();
+  }
+
+  // Update summary display
+  function updateSummary() {
+    // Doctor
+    const doctorRadio = document.querySelector('input[name="doctor_id"]:checked');
+    if (doctorRadio) {
+      const doctor = doctors.find(d => d.id == doctorRadio.value);
+      document.getElementById('summaryDoctor').textContent = doctor ? doctor.fullname : 'Not Selected';
+    } else {
+      document.getElementById('summaryDoctor').textContent = 'Not Selected';
+    }
+    
+    // Date
+    const dateValue = document.getElementById('appointmentDate').value;
+    if (dateValue) {
+      const dateObj = new Date(dateValue);
+      document.getElementById('summaryDate').textContent = dateObj.toLocaleDateString('en-US', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    } else {
+      document.getElementById('summaryDate').textContent = 'Not Selected';
+    }
+    
+    // Time
+    const timeValue = document.getElementById('selectedTime').value;
+    document.getElementById('summaryTime').textContent = timeValue || 'Not Selected';
+  }
+
+  // Set minimum date to tomorrow
+  function setMinDate() {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    const minDate = tomorrow.toISOString().split('T')[0];
+    document.getElementById('appointmentDate').setAttribute('min', minDate);
+  }
+
+  // Event listeners
+  document.addEventListener('DOMContentLoaded', () => {
+    generateTimeSlots();
+    setMinDate();
+    
+    document.querySelectorAll('input[name="doctor_id"]').forEach(radio => {
+      radio.addEventListener('change', updateSummary);
+    });
+    
+    document.getElementById('appointmentDate').addEventListener('change', updateSummary);
+  });
+
+  // Form validation before submit
+  document.getElementById('appointmentForm').addEventListener('submit', (e) => {
+    const doctorRadio = document.querySelector('input[name="doctor_id"]:checked');
+    const appointmentDate = document.getElementById('appointmentDate').value;
+    const appointmentTime = document.getElementById('selectedTime').value;
+    const reasonForVisit = document.querySelector('input[name="reason_for_visit"]').value;
+
+    if (!doctorRadio || !appointmentDate || !appointmentTime || !reasonForVisit.trim()) {
+      e.preventDefault();
+      alert('Please fill in all required fields.');
+    }
+  });
+</script>
 
 </body>
 </html>

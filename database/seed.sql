@@ -22,3 +22,23 @@ CREATE TABLE IF NOT EXISTS `users` (
   UNIQUE KEY `uniq_institution_id` (`institution_id`),
   KEY `idx_role` (`role`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Appointments table
+CREATE TABLE IF NOT EXISTS `appointments` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `student_id` INT UNSIGNED NOT NULL,
+  `doctor_id` INT UNSIGNED NOT NULL,
+  `appointment_date` DATE NOT NULL,
+  `appointment_time` TIME NOT NULL,
+  `reason_for_visit` VARCHAR(255) NOT NULL,
+  `notes` TEXT,
+  `status` ENUM('pending','confirmed','completed','cancelled') NOT NULL DEFAULT 'pending',
+  `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  FOREIGN KEY (`student_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+  FOREIGN KEY (`doctor_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+  KEY `idx_student_date` (`student_id`, `appointment_date`),
+  KEY `idx_doctor_date` (`doctor_id`, `appointment_date`),
+  KEY `idx_status` (`status`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
