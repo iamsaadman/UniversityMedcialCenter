@@ -23,7 +23,13 @@
     </div>
 
     <!-- FORM -->
-    <form action="studentportal.php" method="POST" class="space-y-5">
+    <?php if (isset($_GET['signup']) && $_GET['signup'] === 'success'): ?>
+      <div class="mb-4 p-3 rounded-xl bg-green-100 text-green-700 text-sm">Account created successfully. Please sign in.</div>
+    <?php endif; ?>
+    <?php if (isset($_GET['error'])): ?>
+      <div class="mb-4 p-3 rounded-xl bg-red-100 text-red-700 text-sm">Sign-in error. Please check your credentials.</div>
+    <?php endif; ?>
+    <form action="login_process.php" method="POST" class="space-y-5">
 
       <!-- EMAIL -->
       <div>

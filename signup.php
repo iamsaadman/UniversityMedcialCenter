@@ -6,7 +6,7 @@
   <title>Sign Up | Health Portal</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<<body class="min-h-screen flex items-center justify-center py-16
+<body class="min-h-screen flex items-center justify-center py-16
              bg-gradient-to-r from-green-700 to-green-400">
 
 
@@ -26,6 +26,28 @@
     </div>
 
     <!-- SIGNUP FORM -->
+    <?php if (isset($_GET['error'])): ?>
+      <?php $err = $_GET['error']; ?>
+      <?php if ($err === 'invalid'): ?>
+        <div class="mb-4 p-3 rounded-xl bg-red-100 text-red-700 text-sm">
+          Please fill all fields correctly. Password must be at least 8 characters, accept terms, and choose a role.
+        </div>
+      <?php elseif ($err === 'exists'): ?>
+        <div class="mb-4 p-3 rounded-xl bg-yellow-100 text-yellow-800 text-sm">
+          An account with this email or ID already exists.
+        </div>
+      <?php elseif ($err === 'db'): ?>
+        <div class="mb-4 p-3 rounded-xl bg-red-100 text-red-700 text-sm">
+          Database error. Please try again later.
+        </div>
+      <?php elseif ($err === 'failed'): ?>
+        <div class="mb-4 p-3 rounded-xl bg-red-100 text-red-700 text-sm">
+          Signup failed unexpectedly. Please retry.
+        </div>
+      <?php else: ?>
+        <div class="mb-4 p-3 rounded-xl bg-red-100 text-red-700 text-sm">Signup error. Please review your details.</div>
+      <?php endif; ?>
+    <?php endif; ?>
     <form action="signup_process.php" method="POST" class="space-y-5">
 
       <!-- FULL NAME -->
@@ -52,7 +74,7 @@
       <!-- PASSWORD -->
       <div>
         <label for="password" class="block text-gray-700 font-medium mb-1">Password</label>
-        <input type="password" name="password" id="password" placeholder="Enter your password" required
+        <input type="password" name="password" id="password" placeholder="Enter your password" required minlength="8"
                class="w-full px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-green-400 focus:border-green-500">
       </div>
 
