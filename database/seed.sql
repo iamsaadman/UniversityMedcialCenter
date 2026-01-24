@@ -42,3 +42,18 @@ CREATE TABLE IF NOT EXISTS `appointments` (
   KEY `idx_doctor_date` (`doctor_id`, `appointment_date`),
   KEY `idx_status` (`status`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Notifications table
+CREATE TABLE IF NOT EXISTS `notifications` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `user_id` INT UNSIGNED NOT NULL,
+  `message` VARCHAR(500) NOT NULL,
+  `type` VARCHAR(50) NOT NULL,
+  `reference_id` INT UNSIGNED,
+  `is_read` BOOLEAN NOT NULL DEFAULT FALSE,
+  `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+  KEY `idx_user_unread` (`user_id`, `is_read`),
+  KEY `idx_created_at` (`created_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

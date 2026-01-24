@@ -223,7 +223,8 @@ $month_name = date('F', mktime(0, 0, 0, $current_month, 1, $current_year));
             <div class="space-y-0.5">
               <?php if ($apt_count > 0): ?>
                 <?php foreach ($day_appointments as $apt): ?>
-                  <div class="text-xs bg-blue-100 text-blue-800 p-0.5 rounded cursor-pointer hover:bg-blue-200" 
+                  <div class="text-xs bg-blue-100 text-blue-800 p-0.5 rounded cursor-pointer hover:bg-blue-200 appointment-card" 
+                       onclick="openAppointmentDetails(<?php echo $apt['id']; ?>)"
                        title="<?php echo htmlspecialchars($apt['patient_name']); ?> - <?php echo date('h:i A', strtotime($apt['appointment_time'])); ?>">
                     <div class="font-semibold truncate text-xs"><?php echo htmlspecialchars(substr($apt['patient_name'], 0, 9)); ?></div>
                     <div class="text-xs leading-none"><?php echo date('h:i A', strtotime($apt['appointment_time'])); ?></div>
@@ -316,6 +317,298 @@ $month_name = date('F', mktime(0, 0, 0, $current_month, 1, $current_year));
     </div>
     <div class="text-center text-sm">&copy; 2026 University Medical Center. All rights reserved.</div>
   </footer>
+
+  <!-- Appointment Details Modal -->
+  <div id="appointmentModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg">
+      <!-- Header with gradient -->
+      <div class="bg-gradient-to-r from-green-600 to-green-700 rounded-t-2xl px-6 py-4 flex justify-between items-center">
+        <h3 class="font-bold text-xl text-white" id="modalTitle">Appointment Details</h3>
+        <button onclick="closeAppointmentDetails()" class="text-white hover:bg-green-800 p-1 rounded transition">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+          </svg>
+        </button>
+      </div>
+
+      <div class="px-6 py-4 max-h-96 overflow-y-auto">
+        <!-- Loading state -->
+        <div id="loadingState" class="text-center py-12">
+          <div class="inline-block animate-spin">
+            <svg xmlns="http://www.w3.org/2000/svg" class="w-10 h-10 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+            </svg>
+          </div>
+        </div>
+
+        <!-- View state -->
+        <div id="viewState" class="hidden space-y-3">
+          <!-- Patient Info Card -->
+          <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+            <p class="text-blue-600 text-xs font-semibold uppercase tracking-wide">Patient</p>
+            <p id="patientNameView" class="font-bold text-lg text-gray-900">—</p>
+          </div>
+
+          <!-- Date & Time Row -->
+          <div class="grid grid-cols-2 gap-3">
+            <div class="bg-purple-50 border border-purple-200 rounded-lg p-3">
+              <p class="text-purple-600 text-xs font-semibold uppercase tracking-wide">Date</p>
+              <p id="appointmentDateView" class="font-semibold text-gray-900 text-sm">—</p>
+            </div>
+            <div class="bg-orange-50 border border-orange-200 rounded-lg p-3">
+              <p class="text-orange-600 text-xs font-semibold uppercase tracking-wide">Time</p>
+              <p id="appointmentTimeView" class="font-semibold text-gray-900 text-sm">—</p>
+            </div>
+          </div>
+
+          <!-- Reason Card -->
+          <div class="bg-amber-50 border border-amber-200 rounded-lg p-3">
+            <p class="text-amber-600 text-xs font-semibold uppercase tracking-wide">Reason</p>
+            <p id="reasonForVisitView" class="font-semibold text-gray-900 text-sm">—</p>
+          </div>
+
+          <!-- Status Card -->
+          <div class="bg-gray-50 border border-gray-200 rounded-lg p-3">
+            <p class="text-gray-600 text-xs font-semibold uppercase tracking-wide">Status</p>
+            <p id="appointmentStatusView" class="font-semibold text-gray-900 text-sm">—</p>
+          </div>
+
+          <!-- Notes Card -->
+          <div class="bg-gray-50 border border-gray-200 rounded-lg p-3">
+            <p class="text-gray-600 text-xs font-semibold uppercase tracking-wide mb-1">Notes</p>
+            <p id="appointmentNotesView" class="text-gray-700 text-sm">—</p>
+          </div>
+        </div>
+
+        <!-- Edit state -->
+        <div id="editState" class="hidden">
+          <form id="editForm" onsubmit="saveAppointmentDetails(event)" class="space-y-3">
+            <input type="hidden" id="appointmentId">
+
+            <!-- Patient Name (Read-only) -->
+            <div class="bg-gray-100 rounded-lg p-3 border border-gray-300">
+              <p class="text-gray-600 text-xs font-semibold uppercase tracking-wide">Patient</p>
+              <p id="patientNameEdit" class="font-bold text-gray-900">—</p>
+            </div>
+
+            <!-- Date & Time -->
+            <div class="grid grid-cols-2 gap-3">
+              <div>
+                <label class="text-gray-700 text-xs font-semibold uppercase tracking-wide block mb-1">Date</label>
+                <input type="date" id="appointmentDateEdit" class="w-full border-2 border-gray-300 p-2 rounded-lg focus:border-green-500 focus:outline-none transition text-sm" required>
+              </div>
+              <div>
+                <label class="text-gray-700 text-xs font-semibold uppercase tracking-wide block mb-1">Time</label>
+                <input type="time" id="appointmentTimeEdit" class="w-full border-2 border-gray-300 p-2 rounded-lg focus:border-green-500 focus:outline-none transition text-sm" required>
+              </div>
+            </div>
+
+            <!-- Reason -->
+            <div>
+              <label class="text-gray-700 text-xs font-semibold uppercase tracking-wide block mb-1">Reason</label>
+              <input type="text" id="reasonForVisitEdit" class="w-full border-2 border-gray-300 p-2 rounded-lg focus:border-green-500 focus:outline-none transition text-sm" required>
+            </div>
+
+            <!-- Status -->
+            <div>
+              <label class="text-gray-700 text-xs font-semibold uppercase tracking-wide block mb-1">Status</label>
+              <select id="appointmentStatusEdit" class="w-full border-2 border-gray-300 p-2 rounded-lg focus:border-green-500 focus:outline-none transition text-sm" required>
+                <option value="pending">Pending</option>
+                <option value="confirmed">Confirmed</option>
+                <option value="completed">Completed</option>
+                <option value="cancelled">Cancelled</option>
+              </select>
+            </div>
+
+            <!-- Notes -->
+            <div>
+              <label class="text-gray-700 text-xs font-semibold uppercase tracking-wide block mb-1">Notes</label>
+              <textarea id="appointmentNotesEdit" rows="2" class="w-full border-2 border-gray-300 p-2 rounded-lg focus:border-green-500 focus:outline-none transition text-sm resize-none"></textarea>
+            </div>
+
+            <!-- Error Message -->
+            <div id="saveError" class="hidden bg-red-50 border border-red-300 text-red-700 px-3 py-2 rounded-lg text-sm"></div>
+
+            <!-- Action Buttons -->
+            <div class="grid grid-cols-2 gap-3 pt-2">
+              <button type="button" onclick="disableEditMode()" class="bg-gray-200 hover:bg-gray-300 text-gray-800 font-semibold py-2 px-4 rounded-lg transition">Cancel</button>
+              <button type="submit" id="saveBtn" class="bg-green-600 hover:bg-green-700 text-white font-semibold py-2 px-4 rounded-lg transition">Save</button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <!-- Footer Buttons (View mode only) -->
+      <div id="viewFooter" class="hidden border-t border-gray-200 px-6 py-3 flex gap-3 bg-gray-50 rounded-b-2xl">
+        <button onclick="closeAppointmentDetails()" class="flex-1 bg-gray-300 hover:bg-gray-400 text-gray-800 font-semibold py-2 rounded-lg transition">Close</button>
+        <button onclick="enableEditMode()" class="flex-1 bg-green-600 hover:bg-green-700 text-white font-semibold py-2 rounded-lg transition">Edit</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- JavaScript for modal functionality -->
+  <script>
+    let currentAppointmentId = null;
+
+    function openAppointmentDetails(appointmentId) {
+      const modal = document.getElementById('appointmentModal');
+      const loadingState = document.getElementById('loadingState');
+      const viewState = document.getElementById('viewState');
+      const editState = document.getElementById('editState');
+      const viewFooter = document.getElementById('viewFooter');
+
+      currentAppointmentId = appointmentId;
+
+      // Show modal with loading state
+      modal.classList.remove('hidden');
+      viewState.classList.add('hidden');
+      editState.classList.add('hidden');
+      viewFooter.classList.add('hidden');
+      loadingState.classList.remove('hidden');
+
+      // Fetch appointment details from server
+      fetch('get_appointment_details.php?id=' + appointmentId)
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            const apt = data.appointment;
+            
+            // Format date
+            const dateObj = new Date(apt.appointment_date + 'T00:00:00');
+            const formattedDate = dateObj.toLocaleDateString('en-US', { 
+              weekday: 'short', 
+              year: 'numeric', 
+              month: 'short', 
+              day: 'numeric' 
+            });
+
+            // Format time
+            const timeObj = new Date('2000-01-01T' + apt.appointment_time);
+            const formattedTime = timeObj.toLocaleTimeString('en-US', { 
+              hour: '2-digit', 
+              minute: '2-digit',
+              hour12: true
+            });
+
+            // Populate view state
+            document.getElementById('patientNameView').textContent = apt.patient_name;
+            document.getElementById('appointmentDateView').textContent = formattedDate;
+            document.getElementById('appointmentTimeView').textContent = formattedTime;
+            document.getElementById('reasonForVisitView').textContent = apt.reason_for_visit;
+            document.getElementById('appointmentStatusView').textContent = apt.status.charAt(0).toUpperCase() + apt.status.slice(1);
+            document.getElementById('appointmentStatusView').className = 'font-semibold text-gray-900 text-sm inline-block px-3 py-1 rounded-full ' + 
+              (apt.status === 'confirmed' ? 'bg-green-100 text-green-800' : 
+               apt.status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 
+               apt.status === 'completed' ? 'bg-blue-100 text-blue-800' : 'bg-red-100 text-red-800');
+            document.getElementById('appointmentNotesView').textContent = apt.notes || 'No notes added';
+
+            // Populate edit state
+            document.getElementById('appointmentId').value = apt.id;
+            document.getElementById('patientNameEdit').textContent = apt.patient_name;
+            document.getElementById('appointmentDateEdit').value = apt.appointment_date;
+            document.getElementById('appointmentTimeEdit').value = apt.appointment_time;
+            document.getElementById('reasonForVisitEdit').value = apt.reason_for_visit;
+            document.getElementById('appointmentStatusEdit').value = apt.status;
+            document.getElementById('appointmentNotesEdit').value = apt.notes || '';
+
+            // Show view state
+            loadingState.classList.add('hidden');
+            viewState.classList.remove('hidden');
+            viewFooter.classList.remove('hidden');
+          } else {
+            alert('Error loading appointment details');
+            closeAppointmentDetails();
+          }
+        })
+        .catch(error => {
+          console.error('Error:', error);
+          alert('Error loading appointment details');
+          closeAppointmentDetails();
+        });
+    }
+
+    function enableEditMode() {
+      document.getElementById('viewState').classList.add('hidden');
+      document.getElementById('viewFooter').classList.add('hidden');
+      document.getElementById('editState').classList.remove('hidden');
+      document.getElementById('modalTitle').textContent = 'Edit Appointment';
+      document.getElementById('saveError').classList.add('hidden');
+    }
+
+    function disableEditMode() {
+      document.getElementById('editState').classList.add('hidden');
+      document.getElementById('viewState').classList.remove('hidden');
+      document.getElementById('viewFooter').classList.remove('hidden');
+      document.getElementById('modalTitle').textContent = 'Appointment Details';
+    }
+
+    function saveAppointmentDetails(event) {
+      event.preventDefault();
+
+      const appointmentId = document.getElementById('appointmentId').value;
+      const appointmentDate = document.getElementById('appointmentDateEdit').value;
+      const appointmentTime = document.getElementById('appointmentTimeEdit').value;
+      const reasonForVisit = document.getElementById('reasonForVisitEdit').value;
+      const status = document.getElementById('appointmentStatusEdit').value;
+      const notes = document.getElementById('appointmentNotesEdit').value;
+
+      const saveBtn = document.getElementById('saveBtn');
+      saveBtn.disabled = true;
+      saveBtn.textContent = 'Saving...';
+
+      // Send update to server
+      fetch('update_appointment.php', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: new URLSearchParams({
+          id: appointmentId,
+          appointment_date: appointmentDate,
+          appointment_time: appointmentTime,
+          reason_for_visit: reasonForVisit,
+          status: status,
+          notes: notes
+        })
+      })
+      .then(response => response.json())
+      .then(data => {
+        if (data.success) {
+          // Reload appointment details in view mode
+          disableEditMode();
+          openAppointmentDetails(appointmentId);
+        } else {
+          document.getElementById('saveError').textContent = data.message || 'Error saving appointment';
+          document.getElementById('saveError').classList.remove('hidden');
+        }
+      })
+      .catch(error => {
+        console.error('Error:', error);
+        document.getElementById('saveError').textContent = 'Error saving appointment';
+        document.getElementById('saveError').classList.remove('hidden');
+      })
+      .finally(() => {
+        saveBtn.disabled = false;
+        saveBtn.textContent = 'Save';
+      });
+    }
+
+    function closeAppointmentDetails() {
+      const modal = document.getElementById('appointmentModal');
+      modal.classList.add('hidden');
+      document.getElementById('editState').classList.add('hidden');
+      document.getElementById('viewState').classList.remove('hidden');
+      document.getElementById('viewFooter').classList.add('hidden');
+      document.getElementById('modalTitle').textContent = 'Appointment Details';
+    }
+
+    // Close modal when clicking outside
+    document.getElementById('appointmentModal').addEventListener('click', function(e) {
+      if (e.target === this) {
+        closeAppointmentDetails();
+      }
+    });
+  </script>
 
 </body>
 </html>
