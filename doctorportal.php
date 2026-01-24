@@ -11,22 +11,45 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'doctor') {
 $doctor_id = $_SESSION['user_id'];
 $doctor_name = $_SESSION['fullname'] ?? 'Doctor';
 
-// Fetch today's appointments
-$today = date('Y-m-d');
+// Fetch all appointments for the doctor
 $query = "SELECT a.*, u.fullname as patient_name 
           FROM appointments a 
           JOIN users u ON a.student_id = u.id 
-          WHERE a.doctor_id = ? AND a.appointment_date = ?
-          ORDER BY a.appointment_time ASC";
+          WHERE a.doctor_id = ?
+          ORDER BY a.appointment_date ASC, a.appointment_time ASC";
 
 $stmt = $mysqli->prepare($query);
-$stmt->bind_param('is', $doctor_id, $today);
+$stmt->bind_param('i', $doctor_id);
 $stmt->execute();
 $result = $stmt->get_result();
-$appointments = $result->fetch_all(MYSQLI_ASSOC);
-$appointment_count = count($appointments);
+$all_appointments = $result->fetch_all(MYSQLI_ASSOC);
+
+// Count today's appointments
+$today = date('Y-m-d');
+$appointment_count = 0;
+$appointments_by_date = [];
+
+foreach ($all_appointments as $apt) {
+  if ($apt['appointment_date'] === $today) {
+    $appointment_count++;
+  }
+  if (!isset($appointments_by_date[$apt['appointment_date']])) {
+    $appointments_by_date[$apt['appointment_date']] = [];
+  }
+  $appointments_by_date[$apt['appointment_date']][] = $apt;
+}
 
 $stmt->close();
+
+// Get current month and year for calendar
+$current_month = isset($_GET['month']) ? intval($_GET['month']) : date('m');
+$current_year = isset($_GET['year']) ? intval($_GET['year']) : date('Y');
+$current_date = date("$current_year-$current_month");
+
+// Calculate days in month and first day
+$days_in_month = cal_days_in_month(CAL_GREGORIAN, $current_month, $current_year);
+$first_day = date('w', mktime(0, 0, 0, $current_month, 1, $current_year));
+$month_name = date('F', mktime(0, 0, 0, $current_month, 1, $current_year));
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -153,36 +176,78 @@ $stmt->close();
       </div>
     </div>
 
-    <!-- Today's Schedule Table -->
+    <!-- Calendar Section -->
     <div class="bg-white rounded-xl shadow p-4 mb-6">
-      <h3 class="font-bold text-lg mb-3">Today's Schedule</h3>
-      <?php if ($appointment_count > 0): ?>
-      <div class="grid grid-cols-6 gap-2 font-medium text-gray-700 border-b pb-2 mb-2">
-        <span>Time</span>
-        <span>Patient</span>
-        <span>Appointment Type</span>
-        <span>Status</span>
-        <span>Doctor</span>
-        <span>Action</span>
+      <div class="flex justify-between items-center mb-4">
+        <h3 class="font-bold text-base">Appointment Calendar</h3>
+        <div class="flex gap-1">
+          <a href="?month=<?php echo ($current_month > 1 ? $current_month - 1 : 12); ?>&year=<?php echo ($current_month > 1 ? $current_year : $current_year - 1); ?>" 
+             class="bg-gray-200 hover:bg-gray-300 px-2 py-1 rounded text-sm">← Prev</a>
+          <span class="px-2 py-1 font-semibold text-sm"><?php echo "$month_name $current_year"; ?></span>
+          <a href="?month=<?php echo ($current_month < 12 ? $current_month + 1 : 1); ?>&year=<?php echo ($current_month < 12 ? $current_year : $current_year + 1); ?>" 
+             class="bg-gray-200 hover:bg-gray-300 px-2 py-1 rounded text-sm">Next →</a>
+        </div>
       </div>
-      <!-- Display appointments from database -->
-      <?php foreach ($appointments as $apt): ?>
-      <div class="grid grid-cols-6 gap-2 items-center py-2 border-b">
-        <span><?php echo date('h:i A', strtotime($apt['appointment_time'])); ?></span>
-        <span><?php echo htmlspecialchars($apt['patient_name']); ?></span>
-        <span><?php echo htmlspecialchars($apt['reason_for_visit']); ?></span>
-        <span class="<?php echo $apt['status'] === 'confirmed' ? 'text-green-600' : ($apt['status'] === 'pending' ? 'text-yellow-600' : 'text-gray-600'); ?>">
-          <?php echo ucfirst($apt['status']); ?>
-        </span>
-        <span><?php echo htmlspecialchars($doctor_name); ?></span>
-        <button class="text-blue-600 hover:underline">View</button>
+
+      <!-- Calendar Grid -->
+      <div class="grid grid-cols-7 gap-1">
+        <!-- Day headers -->
+        <div class="font-bold text-center py-1 bg-gray-100 rounded text-xs">Sun</div>
+        <div class="font-bold text-center py-1 bg-gray-100 rounded text-xs">Mon</div>
+        <div class="font-bold text-center py-1 bg-gray-100 rounded text-xs">Tue</div>
+        <div class="font-bold text-center py-1 bg-gray-100 rounded text-xs">Wed</div>
+        <div class="font-bold text-center py-1 bg-gray-100 rounded text-xs">Thu</div>
+        <div class="font-bold text-center py-1 bg-gray-100 rounded text-xs">Fri</div>
+        <div class="font-bold text-center py-1 bg-gray-100 rounded text-xs">Sat</div>
+
+        <!-- Empty cells for days before month starts -->
+        <?php for ($i = 0; $i < $first_day; $i++): ?>
+          <div class="p-1 bg-gray-50 rounded min-h-16"></div>
+        <?php endfor; ?>
+
+        <!-- Days of the month -->
+        <?php for ($day = 1; $day <= $days_in_month; $day++): 
+          $date_str = sprintf("%04d-%02d-%02d", $current_year, $current_month, $day);
+          $today_str = date('Y-m-d');
+          $is_today = ($date_str === $today_str);
+          $day_appointments = isset($appointments_by_date[$date_str]) ? $appointments_by_date[$date_str] : [];
+          $apt_count = count($day_appointments);
+        ?>
+          <div class="p-1 border rounded min-h-16 <?php echo $is_today ? 'bg-green-50 border-green-400 border-2' : 'bg-white'; ?> hover:shadow-md transition">
+            <!-- Date number -->
+            <div class="font-bold text-xs mb-1 <?php echo $is_today ? 'text-green-700' : 'text-gray-700'; ?>">
+              <?php echo $day; ?>
+            </div>
+
+            <!-- Appointments for this day -->
+            <div class="space-y-0.5">
+              <?php if ($apt_count > 0): ?>
+                <?php foreach ($day_appointments as $apt): ?>
+                  <div class="text-xs bg-blue-100 text-blue-800 p-0.5 rounded cursor-pointer hover:bg-blue-200" 
+                       title="<?php echo htmlspecialchars($apt['patient_name']); ?> - <?php echo date('h:i A', strtotime($apt['appointment_time'])); ?>">
+                    <div class="font-semibold truncate text-xs"><?php echo htmlspecialchars(substr($apt['patient_name'], 0, 9)); ?></div>
+                    <div class="text-xs leading-none"><?php echo date('h:i A', strtotime($apt['appointment_time'])); ?></div>
+                  </div>
+                <?php endforeach; ?>
+              <?php else: ?>
+                <div class="text-xs text-gray-400">—</div>
+              <?php endif; ?>
+            </div>
+          </div>
+        <?php endfor; ?>
       </div>
-      <?php endforeach; ?>
-      <?php else: ?>
-      <div class="text-center py-6 text-gray-500">
-        <p>No appointments scheduled for today.</p>
+
+      <!-- Legend -->
+      <div class="mt-3 pt-2 border-t flex gap-4 text-xs">
+        <div class="flex items-center gap-1">
+          <div class="w-3 h-3 bg-blue-100 border border-blue-400 rounded"></div>
+          <span>Appointment</span>
+        </div>
+        <div class="flex items-center gap-1">
+          <div class="w-3 h-3 bg-green-50 border-2 border-green-400 rounded"></div>
+          <span>Today</span>
+        </div>
       </div>
-      <?php endif; ?>
     </div>
 
     <!-- Prescribe Medicine Form -->
