@@ -74,6 +74,31 @@ $student_id = (int)$_SESSION['user_id'];
 $insertStmt->bind_param('iissss', $student_id, $doctor_id, $appointment_date, $appointment_time, $reason_for_visit, $notes);
 
 if ($insertStmt->execute()) {
+    $appointment_id = $insertStmt->insert_id;
+    
+    // Get student name for notification
+    $studentStmt = $mysqli->prepare('SELECT fullname FROM users WHERE id = ?');
+    $studentStmt->bind_param('i', $student_id);
+    $studentStmt->execute();
+    $studentResult = $studentStmt->get_result();
+    $studentRow = $studentResult->fetch_assoc();
+    $student_name = $studentRow['fullname'];
+    
+    // Create notification for doctor
+    $notificationMsg = "New appointment booked by $student_name on " . date('M d, Y', strtotime($appointment_date)) . " at $appointment_time";
+    $notificationStmt = $mysqli->prepare('
+        INSERT INTO notifications 
+        (user_id, message, type, reference_id) 
+        VALUES (?, ?, \'appointment\', ?)
+    ');
+    
+    if ($notificationStmt) {
+        $notificationStmt->bind_param('isi', $doctor_id, $notificationMsg, $appointment_id);
+        $notificationStmt->execute();
+        $notificationStmt->close();
+    }
+    
+    $studentStmt->close();
     redirect('studentbooknewappointment.php?success=1');
 } else {
     redirect('studentbooknewappointment.php?error=db');
