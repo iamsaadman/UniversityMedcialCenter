@@ -57,3 +57,22 @@ CREATE TABLE IF NOT EXISTS `notifications` (
   KEY `idx_user_unread` (`user_id`, `is_read`),
   KEY `idx_created_at` (`created_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Medical test requests table
+CREATE TABLE IF NOT EXISTS `test_requests` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `doctor_id` INT UNSIGNED NOT NULL,
+  `student_id` INT UNSIGNED NOT NULL,
+  `appointment_id` INT UNSIGNED DEFAULT NULL,
+  `test_type` VARCHAR(120) NOT NULL,
+  `priority` ENUM('Normal','Urgent','Critical') NOT NULL DEFAULT 'Normal',
+  `notes` TEXT,
+  `status` ENUM('requested','in_progress','completed') NOT NULL DEFAULT 'requested',
+  `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  FOREIGN KEY (`doctor_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+  FOREIGN KEY (`student_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+  FOREIGN KEY (`appointment_id`) REFERENCES `appointments` (`id`) ON DELETE SET NULL,
+  KEY `idx_student_status` (`student_id`, `status`),
+  KEY `idx_doctor_created` (`doctor_id`, `created_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

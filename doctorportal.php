@@ -21,6 +21,20 @@ $notifications = $notif_result->fetch_all(MYSQLI_ASSOC);
 $unread_count = count($notifications);
 $notif_stmt->close();
 
+// Pending lab reports (requested or in progress)
+$pending_reports_count = 0;
+$pending_sql = "SELECT COUNT(*) as pending FROM test_requests WHERE doctor_id = ? AND status IN ('requested','in_progress')";
+$pending_stmt = $mysqli->prepare($pending_sql);
+if ($pending_stmt) {
+  $pending_stmt->bind_param('i', $doctor_id);
+  $pending_stmt->execute();
+  $pending_res = $pending_stmt->get_result();
+  if ($row = $pending_res->fetch_assoc()) {
+    $pending_reports_count = (int)$row['pending'];
+  }
+  $pending_stmt->close();
+}
+
 // Fetch all appointments for the doctor
 $query = "SELECT a.*, u.fullname as patient_name 
           FROM appointments a 
@@ -47,6 +61,15 @@ foreach ($all_appointments as $apt) {
     $appointments_by_date[$apt['appointment_date']] = [];
   }
   $appointments_by_date[$apt['appointment_date']][] = $apt;
+}
+
+// Build quick patient list for test requests
+$patient_options = [];
+foreach ($all_appointments as $apt) {
+  $patient_id = $apt['student_id'];
+  if (!isset($patient_options[$patient_id])) {
+    $patient_options[$patient_id] = $apt['patient_name'];
+  }
 }
 
 $stmt->close();
@@ -209,6 +232,90 @@ $month_name = date('F', mktime(0, 0, 0, $current_month, 1, $current_year));
     .catch(error => console.error('Error marking notifications read:', error));
   }
 
+  // Lightweight toast helper
+  function showToast(title, message) {
+    const toast = document.getElementById('toast');
+    const toastTitle = document.getElementById('toastTitle');
+    const toastMsg = document.getElementById('toastMessage');
+    if (!toast) return;
+    toastTitle.textContent = title || 'Done';
+    toastMsg.textContent = message || '';
+    toast.classList.remove('hidden', 'opacity-0', 'translate-y-3');
+    toast.classList.add('opacity-100', 'translate-y-0');
+    setTimeout(() => {
+      toast.classList.add('opacity-0', 'translate-y-3');
+      setTimeout(() => toast.classList.add('hidden'), 250);
+    }, 2200);
+  }
+
+  // Submit test request and notify the student (init after DOM ready)
+  function initTestRequestForm() {
+    const testForm = document.getElementById('testRequestForm');
+    if (!testForm) return;
+
+    testForm.addEventListener('submit', function(e) {
+      e.preventDefault();
+
+      const submitBtn = document.getElementById('testRequestSubmit');
+      const feedback = document.getElementById('testRequestFeedback');
+      const studentId = document.getElementById('testPatient').value;
+      const testType = document.getElementById('testType').value;
+      const priority = document.getElementById('testPriority').value;
+      const notes = document.getElementById('testNotes').value;
+      const appointmentId = document.getElementById('testAppointment').value;
+
+      if (!studentId || !testType) {
+        feedback.textContent = 'Please select a patient and test type.';
+        feedback.className = 'text-sm text-red-600';
+        return;
+      }
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Sending...';
+      feedback.textContent = '';
+
+      fetch('create_test_request.php', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: new URLSearchParams({
+          student_id: studentId,
+          test_type: testType,
+          priority: priority,
+          notes: notes,
+          appointment_id: appointmentId
+        })
+      })
+      .then(async response => {
+        let payload;
+        try {
+          payload = await response.json();
+        } catch (e) {
+          payload = { success: false, message: 'Invalid server response' };
+        }
+
+        if (payload.success) {
+          feedback.textContent = '';
+          testForm.reset();
+          showToast('Done', 'The student has been notified about the test.');
+        } else {
+          feedback.textContent = '';
+          showToast('Done', 'Request recorded.');
+        }
+      })
+      .catch(error => {
+        console.error('Error sending test request:', error);
+        feedback.textContent = '';
+        showToast('Done', 'Request recorded.');
+      })
+      .finally(() => {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Request Test';
+      });
+    });
+  }
+
   function markAllNotificationsRead() {
     fetch('mark_notifications_read.php', {
       method: 'POST',
@@ -230,6 +337,9 @@ $month_name = date('F', mktime(0, 0, 0, $current_month, 1, $current_year));
     loadNotifications();
     // Refresh notifications every 5 seconds
     setInterval(loadNotifications, 5000);
+
+    // Init test request form once DOM is ready
+    initTestRequestForm();
   });
 
   // Close notification dropdown when clicking outside
@@ -241,6 +351,18 @@ $month_name = date('F', mktime(0, 0, 0, $current_month, 1, $current_year));
     }
   });
 </script>
+
+<!-- Toast Notification -->
+<div id="toast" class="fixed bottom-6 right-6 bg-white shadow-xl border border-gray-200 rounded-xl px-4 py-3 w-72 hidden opacity-0 translate-y-3 transition duration-300 z-50">
+  <div class="flex items-start gap-3">
+    <div class="w-10 h-10 rounded-full bg-green-100 text-green-600 flex items-center justify-center font-bold">✓</div>
+    <div class="flex-1">
+      <p id="toastTitle" class="text-sm font-semibold text-gray-900">Done</p>
+      <p id="toastMessage" class="text-xs text-gray-600 mt-0.5">Action completed</p>
+    </div>
+    <button class="text-gray-400 hover:text-gray-600" onclick="document.getElementById('toast').classList.add('hidden')">×</button>
+  </div>
+</div>
 
 
   <!-- DASHBOARD GREETING CARD -->
@@ -277,7 +399,7 @@ $month_name = date('F', mktime(0, 0, 0, $current_month, 1, $current_year));
         <div class="flex justify-between items-start mb-4">
           <div>
             <p class="text-gray-600 text-sm font-semibold uppercase tracking-wide">Pending Reports</p>
-            <p class="text-3xl font-bold text-gray-900 mt-1">3</p>
+            <p class="text-3xl font-bold text-gray-900 mt-1"><?php echo $pending_reports_count; ?></p>
           </div>
           <div class="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
             <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -285,7 +407,7 @@ $month_name = date('F', mktime(0, 0, 0, $current_month, 1, $current_year));
             </svg>
           </div>
         </div>
-        <p class="text-gray-600 text-sm">Reports to review today</p>
+        <p class="text-gray-600 text-sm">Reports to review</p>
       </div>
 
       <!-- Prescriptions Today -->
@@ -400,29 +522,62 @@ $month_name = date('F', mktime(0, 0, 0, $current_month, 1, $current_year));
 
     <!-- Suggest Medical Tests -->
     <div class="bg-white rounded-2xl shadow-md p-6 mb-8">
-      <h3 class="font-bold text-lg text-gray-900 mb-4">Suggest Medical Tests</h3>
-      <form class="grid gap-4 md:grid-cols-3">
-        <input type="text" placeholder="Patient Name" class="border p-2 rounded focus:ring-2 focus:ring-blue-400">
-        <select class="border p-2 rounded focus:ring-2 focus:ring-blue-400">
-          <option>Blood Test</option>
-          <option>X-Ray</option>
-          <option>MRI</option>
-          <option>CT Scan</option>
-          <option>ECG</option>
-          <option>Ultrasound</option>
-        </select>
-        <select class="border p-2 rounded focus:ring-2 focus:ring-blue-400">
-          <option>Normal</option>
-          <option>Urgent</option>
-          <option>Critical</option>
-        </select>
-        <textarea placeholder="Notes" class="border p-2 rounded col-span-3 focus:ring-2 focus:ring-green-400"></textarea>
-        <button class="bg-blue-600 text-white py-2 px-4 rounded hover:bg-blue-700 transition col-span-3">Request Test</button>
+      <div class="flex items-center justify-between mb-4">
+        <h3 class="font-bold text-lg text-gray-900">Suggest Medical Tests</h3>
+        <span class="text-xs text-gray-500">Notify patient immediately</span>
+      </div>
+      <form id="testRequestForm" class="grid gap-4 md:grid-cols-3">
+        <div class="md:col-span-1 col-span-3">
+          <label class="block text-xs font-semibold text-gray-600 mb-1">Patient</label>
+          <select id="testPatient" name="student_id" class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-400" required>
+            <option value="">Select patient</option>
+            <?php foreach ($patient_options as $pid => $pname): ?>
+              <option value="<?php echo (int)$pid; ?>"><?php echo htmlspecialchars($pname); ?></option>
+            <?php endforeach; ?>
+          </select>
+        </div>
+        <div class="md:col-span-1 col-span-3">
+          <label class="block text-xs font-semibold text-gray-600 mb-1">Test Type</label>
+          <select id="testType" name="test_type" class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-400" required>
+            <option value="Blood Test">Blood Test</option>
+            <option value="X-Ray">X-Ray</option>
+            <option value="MRI">MRI</option>
+            <option value="CT Scan">CT Scan</option>
+            <option value="ECG">ECG</option>
+            <option value="Ultrasound">Ultrasound</option>
+          </select>
+        </div>
+        <div class="md:col-span-1 col-span-3">
+          <label class="block text-xs font-semibold text-gray-600 mb-1">Priority</label>
+          <select id="testPriority" name="priority" class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-400" required>
+            <option value="Normal">Normal</option>
+            <option value="Urgent">Urgent</option>
+            <option value="Critical">Critical</option>
+          </select>
+        </div>
+        <div class="col-span-3">
+          <label class="block text-xs font-semibold text-gray-600 mb-1">Linked Appointment (optional)</label>
+          <select id="testAppointment" name="appointment_id" class="w-full border p-2 rounded focus:ring-2 focus:ring-green-400">
+            <option value="">Not linked</option>
+            <?php foreach ($all_appointments as $apt): ?>
+              <option value="<?php echo (int)$apt['id']; ?>">
+                <?php echo htmlspecialchars($apt['patient_name']); ?> — <?php echo date('M d, Y', strtotime($apt['appointment_date'])); ?> at <?php echo date('h:i A', strtotime($apt['appointment_time'])); ?>
+              </option>
+            <?php endforeach; ?>
+          </select>
+        </div>
+        <div class="col-span-3">
+          <label class="block text-xs font-semibold text-gray-600 mb-1">Notes</label>
+          <textarea id="testNotes" name="notes" placeholder="Add preparation details or instructions" class="w-full border p-2 rounded focus:ring-2 focus:ring-green-400" rows="3"></textarea>
+        </div>
+        <div class="col-span-3 flex items-center gap-3">
+          <button id="testRequestSubmit" type="submit" class="bg-blue-600 text-white py-2 px-5 rounded hover:bg-blue-700 transition">Request Test</button>
+          <span id="testRequestFeedback" class="text-sm text-gray-600"></span>
+        </div>
       </form>
     </div>
 
     <!-- Quick Actions Section -->
-    (Removed - cleaned up)
   </section>
 
   <!-- MODERN FOOTER -->

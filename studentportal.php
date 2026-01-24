@@ -11,19 +11,21 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'student') {
 $student_id = $_SESSION['user_id'];
 $student_name = $_SESSION['fullname'] ?? 'Student';
 
-// Fetch unread notifications
-$notification_query = "SELECT id, message, type, reference_id, created_at 
-                      FROM notifications 
-                      WHERE user_id = ? AND is_read = FALSE 
-                      ORDER BY created_at DESC 
-                      LIMIT 5";
-$notification_stmt = $mysqli->prepare($notification_query);
-$notification_stmt->bind_param('i', $student_id);
-$notification_stmt->execute();
-$notification_result = $notification_stmt->get_result();
-$notifications = $notification_result->fetch_all(MYSQLI_ASSOC);
-$unread_count = count($notifications);
-$notification_stmt->close();
+$unread_count = 0; // will be refreshed via AJAX
+
+// Doctor test requests count (all statuses)
+$lab_reports_count = 0;
+$lab_sql = "SELECT COUNT(*) as total FROM test_requests WHERE student_id = ?";
+$lab_stmt = $mysqli->prepare($lab_sql);
+if ($lab_stmt) {
+  $lab_stmt->bind_param('i', $student_id);
+  $lab_stmt->execute();
+  $lab_res = $lab_stmt->get_result();
+  if ($row = $lab_res->fetch_assoc()) {
+    $lab_reports_count = (int)$row['total'];
+  }
+  $lab_stmt->close();
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -58,44 +60,25 @@ $notification_stmt->close();
         <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
           <path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V4a2 2 0 10-4 0v1.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1h6z"/>
         </svg>
-        <?php if ($unread_count > 0): ?>
-          <span class="absolute top-1 right-1 inline-flex items-center justify-center px-2 py-0.5 text-xs font-bold text-white bg-red-500 rounded-full animate-pulse">
-            <?php echo $unread_count; ?>
-          </span>
-        <?php endif; ?>
+        <span id="notificationBadge" class="absolute top-1 right-1 inline-flex items-center justify-center px-2 py-0.5 text-xs font-bold text-white bg-red-500 rounded-full <?php echo $unread_count > 0 ? '' : 'hidden'; ?>">
+          <?php echo $unread_count; ?>
+        </span>
       </button>
 
       <!-- Notifications Dropdown -->
-      <div id="notificationDropdown" class="hidden absolute right-0 mt-2 w-80 bg-white border border-gray-200 rounded-xl shadow-xl z-50 max-h-96 overflow-y-auto">
+      <div id="notificationDropdown" class="hidden absolute right-0 mt-2 w-96 bg-white border border-gray-200 rounded-xl shadow-xl z-50 max-h-96 overflow-y-auto">
         <div class="bg-gradient-to-r from-blue-500 to-blue-600 text-white px-4 py-3 font-semibold rounded-t-xl flex justify-between items-center sticky top-0">
           <div class="flex items-center gap-2">
             <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
               <path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V4a2 2 0 10-4 0v1.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1h6z"/>
             </svg>
-            <span>Notifications</span>
+            <span>Notification History</span>
           </div>
-          <?php if ($unread_count > 0): ?>
-            <button onclick="markAllAsRead()" class="text-xs bg-blue-700 hover:bg-blue-800 px-2 py-1 rounded transition">Mark Read</button>
-          <?php endif; ?>
+          <button onclick="markAllAsRead()" class="text-xs bg-white/10 hover:bg-white/20 px-2 py-1 rounded transition border border-white/20">Mark Read</button>
         </div>
-        
-        <?php if ($unread_count > 0): ?>
-          <div class="divide-y">
-            <?php foreach ($notifications as $notif): ?>
-              <div class="px-4 py-3 hover:bg-blue-50 transition border-l-4 border-blue-500 bg-white">
-                <p class="text-gray-800 font-medium text-sm"><?php echo htmlspecialchars($notif['message']); ?></p>
-                <p class="text-gray-500 text-xs mt-1"><?php echo date('M d, H:i', strtotime($notif['created_at'])); ?></p>
-              </div>
-            <?php endforeach; ?>
-          </div>
-        <?php else: ?>
-          <div class="px-4 py-8 text-center text-gray-500">
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-12 h-12 mx-auto mb-2 opacity-30" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V4a2 2 0 10-4 0v1.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1h6z"/>
-            </svg>
-            <p class="text-sm">No new notifications</p>
-          </div>
-        <?php endif; ?>
+        <div id="notificationList" class="divide-y bg-white">
+          <div class="px-4 py-4 text-center text-gray-500 text-sm">Loading...</div>
+        </div>
       </div>
     </div>
 
@@ -126,11 +109,6 @@ $notification_stmt->close();
   const profileBtn = document.getElementById('profileBtn');
   const profileDropdown = document.getElementById('profileDropdown');
 
-  notificationBtn.addEventListener('click', () => {
-    notificationDropdown.classList.toggle('hidden');
-    profileDropdown.classList.add('hidden');
-  });
-
   profileBtn.addEventListener('click', () => {
     profileDropdown.classList.toggle('hidden');
     notificationDropdown.classList.add('hidden');
@@ -152,10 +130,143 @@ $notification_stmt->close();
     .then(response => response.json())
     .then(data => {
       if (data.success) {
-        location.reload();
+        loadNotifications();
       }
     });
   }
+
+  function renderNotifications(data) {
+    const list = document.getElementById('notificationList');
+    const badge = document.getElementById('notificationBadge');
+
+    if (!data || !data.notifications || data.notifications.length === 0) {
+      if (badge) badge.classList.add('hidden');
+      list.innerHTML = '<div class="px-4 py-8 text-center text-gray-500 text-sm">No notifications</div>';
+      return;
+    }
+
+    if (badge) {
+      badge.textContent = data.unread_count;
+      if (data.unread_count > 0) {
+        badge.classList.remove('hidden');
+      } else {
+        badge.classList.add('hidden');
+      }
+    }
+
+    list.innerHTML = data.notifications.map(notif => {
+      const isRead = notif.is_read === true || notif.is_read === 1;
+      const dateObj = new Date(notif.created_at);
+      const formattedDate = dateObj.toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+      return `
+        <div class="px-4 py-3 hover:bg-blue-50 transition ${isRead ? 'opacity-70' : 'bg-blue-50'} cursor-pointer notification-item" 
+             data-type="${notif.type}" 
+             data-ref="${notif.reference_id}" 
+             data-message="${notif.message.replace(/"/g, '&quot;')}" 
+             data-created="${notif.created_at}">
+          <div class="flex items-start gap-3">
+            ${!isRead ? '<div class="w-2 h-2 bg-blue-500 rounded-full mt-1.5 flex-shrink-0"></div>' : '<div class="w-2 h-2 bg-gray-300 rounded-full mt-1.5 flex-shrink-0"></div>'}
+            <div class="flex-1">
+              <p class="text-gray-800 font-medium text-sm">${notif.message}</p>
+              <p class="text-gray-500 text-xs mt-1">${formattedDate}</p>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+
+    attachNotificationClicks();
+  }
+
+  function loadNotifications() {
+    fetch('get_notifications.php')
+      .then(res => res.json())
+      .then(data => renderNotifications(data))
+      .catch(() => {
+        const list = document.getElementById('notificationList');
+        list.innerHTML = '<div class="px-4 py-4 text-center text-gray-500 text-sm">Unable to load notifications</div>';
+      });
+  }
+
+  // Load notifications when dropdown is opened
+  notificationBtn.addEventListener('click', () => {
+    notificationDropdown.classList.toggle('hidden');
+    profileDropdown.classList.add('hidden');
+    if (!notificationDropdown.classList.contains('hidden')) {
+      loadNotifications();
+      markAllAsRead();
+    }
+  });
+
+  function attachNotificationClicks() {
+    const items = document.querySelectorAll('.notification-item');
+    items.forEach(item => {
+      item.addEventListener('click', () => {
+        openNotificationDetail(
+          item.dataset.type,
+          item.dataset.ref,
+          item.dataset.message,
+          item.dataset.created
+        );
+      });
+    });
+  }
+
+  function openNotificationDetail(type, refId, message, createdAt) {
+    const modal = document.getElementById('notificationModal');
+    const body = document.getElementById('notifModalBody');
+    const title = document.getElementById('notifModalTitle');
+
+    modal.classList.remove('hidden');
+    body.innerHTML = '<p class="text-sm text-gray-500">Loading details...</p>';
+    title.textContent = 'Notification';
+
+    if (type === 'test_request' && refId) {
+      fetch(`get_test_request.php?id=${refId}`)
+        .then(res => res.json())
+        .then(data => {
+          if (data.success) {
+            const d = data.data;
+            title.textContent = 'Medical Test Recommendation';
+            const formattedDate = new Date(d.created_at).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+            body.innerHTML = `
+              <div class="space-y-2">
+                <p class="text-sm text-gray-600">Recommended by <span class="font-semibold text-gray-800">${d.doctor_name}</span></p>
+                <div class="bg-blue-50 border border-blue-100 rounded-lg p-3">
+                  <p class="text-gray-900 font-semibold">${d.test_type}</p>
+                  <p class="text-xs text-blue-700 font-semibold mt-1">Priority: ${d.priority}</p>
+                </div>
+                <p class="text-gray-700 text-sm"><span class="font-semibold">Patient:</span> ${d.student_name}</p>
+                ${d.appointment_date ? `<p class="text-gray-700 text-sm"><span class="font-semibold">Linked Appointment:</span> ${d.appointment_date} at ${d.appointment_time}</p>` : ''}
+                <p class="text-gray-500 text-xs">Requested on ${formattedDate}</p>
+                ${d.notes ? `<div class="mt-3"><p class="text-sm font-semibold text-gray-800">Notes</p><p class="text-gray-700 text-sm whitespace-pre-line">${d.notes}</p></div>` : ''}
+              </div>
+            `;
+          } else {
+            body.innerHTML = `<p class="text-sm text-gray-700">${message || 'No additional details available.'}</p>`;
+          }
+        })
+        .catch(() => {
+          body.innerHTML = `<p class="text-sm text-gray-700">${message || 'No additional details available.'}</p>`;
+        });
+    } else {
+      const formattedDate = createdAt ? new Date(createdAt).toLocaleString('en-US', { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
+      body.innerHTML = `
+        <p class="text-gray-800 font-medium">${message}</p>
+        ${formattedDate ? `<p class="text-gray-500 text-sm mt-2">${formattedDate}</p>` : ''}
+      `;
+    }
+  }
+
+  function closeNotificationModal() {
+    const modal = document.getElementById('notificationModal');
+    modal.classList.add('hidden');
+  }
+
+  document.addEventListener('DOMContentLoaded', function() {
+    loadNotifications();
+    setInterval(loadNotifications, 5000);
+  });
 </script>
 
 <!-- MAIN DASHBOARD -->
@@ -195,8 +306,8 @@ $notification_stmt->close();
     <div class="bg-white rounded-2xl p-6 shadow-md hover:shadow-lg transition border-t-4 border-green-500">
       <div class="flex justify-between items-start mb-4">
         <div>
-          <p class="text-gray-600 text-sm font-semibold uppercase tracking-wide">Lab Reports</p>
-          <p class="text-3xl font-bold text-gray-900 mt-1">3</p>
+          <p class="text-gray-600 text-sm font-semibold uppercase tracking-wide">Doctor Test Requests</p>
+          <p class="text-3xl font-bold text-gray-900 mt-1"><?php echo $lab_reports_count; ?></p>
         </div>
         <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
           <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -204,7 +315,7 @@ $notification_stmt->close();
           </svg>
         </div>
       </div>
-      <p class="text-gray-600 text-sm">Available</p>
+      <p class="text-gray-600 text-sm">Total requests from your doctor</p>
     </div>
 
     <!-- Notifications Card -->
@@ -240,7 +351,11 @@ $notification_stmt->close();
         </div>
         <div class="space-y-3">
           <?php foreach (array_slice($notifications, 0, 3) as $notif): ?>
-            <div class="flex gap-4 p-4 bg-gradient-to-r from-blue-50 to-transparent rounded-xl border-l-4 border-blue-500 hover:shadow-md transition">
+            <div class="flex gap-4 p-4 bg-gradient-to-r from-blue-50 to-transparent rounded-xl border-l-4 border-blue-500 hover:shadow-md transition cursor-pointer notification-item"
+                 data-type="<?php echo htmlspecialchars($notif['type']); ?>"
+                 data-ref="<?php echo (int)$notif['reference_id']; ?>"
+                 data-message="<?php echo htmlspecialchars($notif['message'], ENT_QUOTES); ?>"
+                 data-created="<?php echo htmlspecialchars($notif['created_at']); ?>">
               <div class="w-3 h-3 bg-blue-500 rounded-full mt-1 flex-shrink-0"></div>
               <div class="flex-1 min-w-0">
                 <p class="text-gray-800 font-medium text-sm"><?php echo htmlspecialchars($notif['message']); ?></p>
@@ -378,6 +493,20 @@ $notification_stmt->close();
 </div>
 
 
+</div>
+
+<!-- Notification Detail Modal -->
+<div id="notificationModal" class="fixed inset-0 bg-black/40 flex items-center justify-center px-4 hidden z-50">
+  <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg p-6 relative">
+    <button class="absolute top-3 right-3 text-gray-500 hover:text-gray-700" onclick="closeNotificationModal()">&times;</button>
+    <h3 id="notifModalTitle" class="text-lg font-bold text-gray-900 mb-3">Notification</h3>
+    <div id="notifModalBody" class="text-sm text-gray-700 space-y-2">
+      <p>Loading details...</p>
+    </div>
+    <div class="mt-6 text-right">
+      <button class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition" onclick="closeNotificationModal()">Close</button>
+    </div>
+  </div>
 </div>
 
 <!-- MODERN FOOTER -->
