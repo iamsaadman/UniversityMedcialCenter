@@ -1,3 +1,33 @@
+<?php
+session_start();
+require_once 'includes/dp.php';
+
+// Check if doctor is logged in
+if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'doctor') {
+  header('Location: login.php');
+  exit();
+}
+
+$doctor_id = $_SESSION['user_id'];
+$doctor_name = $_SESSION['fullname'] ?? 'Doctor';
+
+// Fetch today's appointments
+$today = date('Y-m-d');
+$query = "SELECT a.*, u.fullname as patient_name 
+          FROM appointments a 
+          JOIN users u ON a.student_id = u.id 
+          WHERE a.doctor_id = ? AND a.appointment_date = ?
+          ORDER BY a.appointment_time ASC";
+
+$stmt = $mysqli->prepare($query);
+$stmt->bind_param('is', $doctor_id, $today);
+$stmt->execute();
+$result = $stmt->get_result();
+$appointments = $result->fetch_all(MYSQLI_ASSOC);
+$appointment_count = count($appointments);
+
+$stmt->close();
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -39,7 +69,7 @@
     <!-- Profile Dropdown -->
     <div class="relative">
       <button id="profileBtn" class="flex items-center gap-2 bg-gray-100 p-2 rounded-full hover:bg-gray-200 transition">
-        <span class="font-semibold text-gray-700">Dr. Johnson</span>
+        <span class="font-semibold text-gray-700"><?php echo htmlspecialchars($doctor_name); ?></span>
         <svg xmlns="http://www.w3.org/2000/svg" class="w-4 h-4 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
           <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/>
         </svg>
@@ -77,8 +107,8 @@
   <!-- DASHBOARD GREETING CARD -->
   <section class="max-w-6xl mx-auto mt-6">
     <div class="bg-gradient-to-r from-green-200 to-green-400 p-6 rounded-2xl shadow mb-6">
-      <h2 class="text-2xl font-bold mb-2">Good Morning, Dr. Johnson</h2>
-      <p class="text-gray-700">You have <span class="font-semibold text-green-700">8</span> appointments scheduled for today.</p>
+      <h2 class="text-2xl font-bold mb-2">Good Morning, <?php echo htmlspecialchars($doctor_name); ?></h2>
+      <p class="text-gray-700">You have <span class="font-semibold text-green-700"><?php echo $appointment_count; ?></span> appointments scheduled for today.</p>
     </div>
 
     <!-- Dashboard Stats Cards -->
@@ -90,7 +120,7 @@
           <p class="text-gray-500 text-sm">Next appointments overview</p>
         </div>
         <div class="text-right">
-          <p class="text-xl font-bold text-green-700">8</p>
+          <p class="text-xl font-bold text-green-700"><?php echo $appointment_count; ?></p>
           <!-- example patient images -->
           <div class="flex -space-x-2 mt-1">
             <img class="w-6 h-6 rounded-full border-2 border-white" src="https://i.pravatar.cc/32?img=1" alt="">
@@ -126,6 +156,7 @@
     <!-- Today's Schedule Table -->
     <div class="bg-white rounded-xl shadow p-4 mb-6">
       <h3 class="font-bold text-lg mb-3">Today's Schedule</h3>
+      <?php if ($appointment_count > 0): ?>
       <div class="grid grid-cols-6 gap-2 font-medium text-gray-700 border-b pb-2 mb-2">
         <span>Time</span>
         <span>Patient</span>
@@ -134,24 +165,24 @@
         <span>Doctor</span>
         <span>Action</span>
       </div>
-      <!-- Example Row -->
+      <!-- Display appointments from database -->
+      <?php foreach ($appointments as $apt): ?>
       <div class="grid grid-cols-6 gap-2 items-center py-2 border-b">
-        <span>09:00 AM</span>
-        <span>John Doe</span>
-        <span>Checkup</span>
-        <span class="text-yellow-600">Scheduled</span>
-        <span>Dr. Johnson</span>
+        <span><?php echo date('h:i A', strtotime($apt['appointment_time'])); ?></span>
+        <span><?php echo htmlspecialchars($apt['patient_name']); ?></span>
+        <span><?php echo htmlspecialchars($apt['reason_for_visit']); ?></span>
+        <span class="<?php echo $apt['status'] === 'confirmed' ? 'text-green-600' : ($apt['status'] === 'pending' ? 'text-yellow-600' : 'text-gray-600'); ?>">
+          <?php echo ucfirst($apt['status']); ?>
+        </span>
+        <span><?php echo htmlspecialchars($doctor_name); ?></span>
         <button class="text-blue-600 hover:underline">View</button>
       </div>
-      <!-- <div class="grid grid-cols-6 gap-2 items-center py-2 border-b">
-        <span>10:00 AM</span>
-        <span>Jane Smith</span>
-        <span>Follow-up</span>
-        <span class="text-green-600">In Progress</span>
-        <span>Dr. Johnson</span>
-        <button class="text-blue-600 hover:underline">View</button>
-      </div> -->
-      <!-- Add more rows dynamically from backend -->
+      <?php endforeach; ?>
+      <?php else: ?>
+      <div class="text-center py-6 text-gray-500">
+        <p>No appointments scheduled for today.</p>
+      </div>
+      <?php endif; ?>
     </div>
 
     <!-- Prescribe Medicine Form -->
