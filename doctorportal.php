@@ -91,6 +91,36 @@ $month_name = date('F', mktime(0, 0, 0, $current_month, 1, $current_year));
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Doctor Portal</title>
   <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .medication-autocomplete {
+      position: relative;
+    }
+    .medication-suggestions {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      right: 0;
+      background: white;
+      border: 1px solid #e5e7eb;
+      border-top: none;
+      border-radius: 0 0 0.5rem 0.5rem;
+      max-height: 200px;
+      overflow-y: auto;
+      z-index: 1000;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+    .medication-suggestion-item {
+      padding: 0.5rem 0.75rem;
+      cursor: pointer;
+      transition: background-color 0.15s;
+    }
+    .medication-suggestion-item:hover {
+      background-color: #f3f4f6;
+    }
+    .medication-suggestion-item.selected {
+      background-color: #dbeafe;
+    }
+  </style>
 </head>
 <body class="bg-gray-50">
 
@@ -316,6 +346,56 @@ $month_name = date('F', mktime(0, 0, 0, $current_month, 1, $current_year));
     });
   }
 
+  // Submit prescription form and notify student
+  function initPrescriptionForm() {
+    const form = document.getElementById('prescriptionForm');
+    if (!form) return;
+    form.addEventListener('submit', function(e) {
+      e.preventDefault();
+
+      const submitBtn = document.getElementById('rxSubmit');
+      const feedback = document.getElementById('rxFeedback');
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Saving...';
+      feedback.textContent = '';
+
+      const payload = new URLSearchParams({
+        student_id: document.getElementById('rxPatient').value,
+        appointment_id: document.getElementById('rxAppointment').value,
+        title: document.getElementById('rxTitle').value,
+        diagnosis: document.getElementById('rxDiagnosis').value,
+        medications: document.getElementById('rxMedications').value,
+        instructions: document.getElementById('rxInstructions').value,
+        follow_up_date: document.getElementById('rxFollowUp').value,
+        complete_appointment: document.getElementById('rxComplete').checked ? '1' : '0'
+      });
+
+      fetch('create_prescription.php', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: payload
+      })
+      .then(r => r.json())
+      .then(data => {
+        if (data.success) {
+          form.reset();
+          showToast('Prescription saved', 'Student has been notified.');
+        } else {
+          feedback.textContent = data.message || 'Unable to save prescription';
+          feedback.className = 'text-sm text-red-600';
+        }
+      })
+      .catch(() => {
+        feedback.textContent = 'Network error';
+        feedback.className = 'text-sm text-red-600';
+      })
+      .finally(() => {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Save & notify student';
+      });
+    });
+  }
+
   function markAllNotificationsRead() {
     fetch('mark_notifications_read.php', {
       method: 'POST',
@@ -332,6 +412,210 @@ $month_name = date('F', mktime(0, 0, 0, $current_month, 1, $current_year));
     .catch(error => console.error('Error marking notifications as read:', error));
   }
 
+  // Medication autocomplete
+  const commonMedications = [
+    'Napa (Paracetamol 500mg)',
+    'Paracetamol 500mg',
+    'Paracetamol 650mg',
+    'Aspirin 75mg',
+    'Aspirin 300mg',
+    'Ibuprofen 200mg',
+    'Ibuprofen 400mg',
+    'Amoxicillin 500mg',
+    'Amoxicillin 250mg',
+    'Azithromycin 500mg',
+    'Azithromycin 250mg',
+    'Ciprofloxacin 500mg',
+    'Metronidazole 400mg',
+    'Omeprazole 20mg',
+    'Omeprazole 40mg',
+    'Ranitidine 150mg',
+    'Losartan 50mg',
+    'Amlodipine 5mg',
+    'Atorvastatin 20mg',
+    'Metformin 500mg',
+    'Insulin',
+    'Cetirizine 10mg',
+    'Loratadine 10mg',
+    'Montelukast 10mg',
+    'Salbutamol Inhaler',
+    'Prednisolone 5mg',
+    'Dexamethasone 0.5mg',
+    'Diclofenac 50mg',
+    'Tramadol 50mg',
+    'Codeine 30mg',
+    'Loperamide 2mg',
+    'Domperidone 10mg',
+    'Ondansetron 4mg',
+    'Vitamin D3 1000IU',
+    'Vitamin B Complex',
+    'Calcium 500mg',
+    'Iron Supplement',
+    'Folic Acid 5mg'
+  ];
+
+  function initMedicationAutocomplete() {
+    const textarea = document.getElementById('rxMedications');
+    const suggestionsDiv = document.getElementById('medicationSuggestions');
+    let selectedIndex = -1;
+    let debounceTimer = null;
+
+    if (!textarea || !suggestionsDiv) return;
+
+    textarea.addEventListener('input', function(e) {
+      const cursorPos = this.selectionStart;
+      const textBeforeCursor = this.value.substring(0, cursorPos);
+      const lines = textBeforeCursor.split('\n');
+      const currentLine = lines[lines.length - 1].trim();
+
+      if (currentLine.length < 2) {
+        suggestionsDiv.classList.add('hidden');
+        return;
+      }
+
+      // Show loading state
+      suggestionsDiv.innerHTML = '<div class="medication-suggestion-item text-gray-500">Searching medications...</div>';
+      suggestionsDiv.classList.remove('hidden');
+
+      // Clear previous debounce timer
+      if (debounceTimer) clearTimeout(debounceTimer);
+
+      // Debounce API calls
+      debounceTimer = setTimeout(() => {
+        fetchMedicationSuggestions(currentLine);
+      }, 300);
+    });
+
+    async function fetchMedicationSuggestions(query) {
+      try {
+        // Get local matches first
+        const localMatches = commonMedications.filter(med => 
+          med.toLowerCase().includes(query.toLowerCase())
+        );
+
+        // Fetch from online API (RxNorm)
+        const onlineMatches = await fetchFromRxNorm(query);
+
+        // Combine and deduplicate
+        const allMatches = [...new Set([...localMatches, ...onlineMatches])];
+
+        if (allMatches.length === 0) {
+          suggestionsDiv.innerHTML = '<div class="medication-suggestion-item text-gray-500">No medications found</div>';
+          return;
+        }
+
+        displaySuggestions(allMatches.slice(0, 15));
+      } catch (error) {
+        console.error('Error fetching medications:', error);
+        // Fallback to local matches only
+        const localMatches = commonMedications.filter(med => 
+          med.toLowerCase().includes(query.toLowerCase())
+        );
+        displaySuggestions(localMatches.slice(0, 10));
+      }
+    }
+
+    async function fetchFromRxNorm(query) {
+      try {
+        // Using RxNorm API (US National Library of Medicine - free)
+        const response = await fetch(`https://rxnav.nlm.nih.gov/REST/drugs.json?name=${encodeURIComponent(query)}`);
+        const data = await response.json();
+        
+        if (data.drugGroup && data.drugGroup.conceptGroup) {
+          const medications = [];
+          data.drugGroup.conceptGroup.forEach(group => {
+            if (group.conceptProperties) {
+              group.conceptProperties.forEach(prop => {
+                if (prop.name) {
+                  medications.push(prop.name);
+                }
+              });
+            }
+          });
+          return medications.slice(0, 10);
+        }
+        return [];
+      } catch (error) {
+        console.warn('RxNorm API error:', error);
+        return [];
+      }
+    }
+
+    function displaySuggestions(matches) {
+      suggestionsDiv.innerHTML = matches.map((med, idx) => {
+        const isLocal = commonMedications.includes(med);
+        const badge = isLocal ? '<span class="text-xs text-green-600">★</span> ' : '';
+        return `<div class="medication-suggestion-item" data-index="${idx}" data-med="${med}">${badge}${med}</div>`;
+      }).join('');
+      suggestionsDiv.classList.remove('hidden');
+      selectedIndex = -1;
+
+      // Add click handlers
+      suggestionsDiv.querySelectorAll('.medication-suggestion-item').forEach(item => {
+        item.addEventListener('click', function() {
+          insertMedication(this.dataset.med);
+        });
+      });
+    }
+
+    textarea.addEventListener('keydown', function(e) {
+      const items = suggestionsDiv.querySelectorAll('.medication-suggestion-item');
+      
+      if (suggestionsDiv.classList.contains('hidden') || items.length === 0) return;
+
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        selectedIndex = Math.min(selectedIndex + 1, items.length - 1);
+        updateSelection();
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        selectedIndex = Math.max(selectedIndex - 1, -1);
+        updateSelection();
+      } else if (e.key === 'Enter' && selectedIndex >= 0) {
+        e.preventDefault();
+        insertMedication(items[selectedIndex].dataset.med);
+      } else if (e.key === 'Escape') {
+        suggestionsDiv.classList.add('hidden');
+      }
+    });
+
+    function updateSelection() {
+      const items = suggestionsDiv.querySelectorAll('.medication-suggestion-item');
+      items.forEach((item, idx) => {
+        item.classList.toggle('selected', idx === selectedIndex);
+      });
+      if (selectedIndex >= 0) {
+        items[selectedIndex].scrollIntoView({ block: 'nearest' });
+      }
+    }
+
+    function insertMedication(med) {
+      const cursorPos = textarea.selectionStart;
+      const textBeforeCursor = textarea.value.substring(0, cursorPos);
+      const textAfterCursor = textarea.value.substring(cursorPos);
+      const lines = textBeforeCursor.split('\n');
+      const currentLine = lines[lines.length - 1];
+      const otherLines = lines.slice(0, -1);
+      
+      const newValue = [...otherLines, med, textAfterCursor].join('\n');
+      textarea.value = newValue;
+      
+      const newCursorPos = newValue.length - textAfterCursor.length;
+      textarea.setSelectionRange(newCursorPos, newCursorPos);
+      textarea.focus();
+      
+      suggestionsDiv.classList.add('hidden');
+      selectedIndex = -1;
+    }
+
+    // Close suggestions when clicking outside
+    document.addEventListener('click', function(e) {
+      if (!textarea.contains(e.target) && !suggestionsDiv.contains(e.target)) {
+        suggestionsDiv.classList.add('hidden');
+      }
+    });
+  }
+
   // Load notifications on page load
   document.addEventListener('DOMContentLoaded', function() {
     loadNotifications();
@@ -340,6 +624,8 @@ $month_name = date('F', mktime(0, 0, 0, $current_month, 1, $current_year));
 
     // Init test request form once DOM is ready
     initTestRequestForm();
+    initPrescriptionForm();
+    initMedicationAutocomplete();
   });
 
   // Close notification dropdown when clicking outside
@@ -476,10 +762,26 @@ $month_name = date('F', mktime(0, 0, 0, $current_month, 1, $current_year));
             <!-- Appointments for this day -->
             <div class="space-y-0.5 text-xs">
               <?php if ($apt_count > 0): ?>
-                <?php foreach ($day_appointments as $apt): ?>
-                  <div class="bg-gradient-to-r from-green-100 to-emerald-100 text-green-800 p-1 rounded cursor-pointer hover:from-green-200 hover:to-emerald-200 appointment-card font-medium" 
+                <?php foreach ($day_appointments as $apt): 
+                  $status = $apt['status'] ?? 'pending';
+                  $card_class = 'bg-gradient-to-r ';
+                  $hover_class = 'hover:opacity-80';
+                  
+                  if ($status === 'completed') {
+                    $card_class .= 'from-green-100 to-green-200 text-green-800';
+                  } else if ($status === 'cancelled') {
+                    $card_class .= 'from-red-100 to-red-200 text-red-800';
+                  } else if ($status === 'confirmed') {
+                    $card_class .= 'from-blue-100 to-blue-200 text-blue-800';
+                  } else if ($status === 'pending') {
+                    $card_class .= 'from-amber-100 to-amber-200 text-amber-800';
+                  } else {
+                    $card_class .= 'from-gray-100 to-gray-200 text-gray-800';
+                  }
+                ?>
+                  <div class="<?php echo $card_class; ?> p-1 rounded cursor-pointer <?php echo $hover_class; ?> appointment-card font-medium" 
                        onclick="openAppointmentDetails(<?php echo $apt['id']; ?>)"
-                       title="<?php echo htmlspecialchars($apt['patient_name']); ?> - <?php echo date('h:i A', strtotime($apt['appointment_time'])); ?>">
+                       title="<?php echo htmlspecialchars($apt['patient_name']); ?> - <?php echo date('h:i A', strtotime($apt['appointment_time'])); ?> (<?php echo ucfirst($status); ?>)">
                     <div class="font-semibold truncate text-xs"><?php echo htmlspecialchars(substr($apt['patient_name'], 0, 9)); ?></div>
                     <div class="text-xs leading-tight"><?php echo date('h:i A', strtotime($apt['appointment_time'])); ?></div>
                   </div>
@@ -495,10 +797,22 @@ $month_name = date('F', mktime(0, 0, 0, $current_month, 1, $current_year));
       </div>
 
       <!-- Legend -->
-      <div class="mt-4 pt-4 border-t flex gap-6 text-sm">
+      <div class="mt-4 pt-4 border-t flex flex-wrap gap-4 text-sm">
         <div class="flex items-center gap-2">
-          <div class="w-4 h-4 bg-gradient-to-r from-green-100 to-emerald-100 border border-green-400 rounded"></div>
-          <span class="text-gray-700">Appointment</span>
+          <div class="w-4 h-4 bg-gradient-to-r from-green-100 to-green-200 border border-green-400 rounded"></div>
+          <span class="text-gray-700">Completed</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <div class="w-4 h-4 bg-gradient-to-r from-blue-100 to-blue-200 border border-blue-400 rounded"></div>
+          <span class="text-gray-700">Confirmed</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <div class="w-4 h-4 bg-gradient-to-r from-amber-100 to-amber-200 border border-amber-400 rounded"></div>
+          <span class="text-gray-700">Pending</span>
+        </div>
+        <div class="flex items-center gap-2">
+          <div class="w-4 h-4 bg-gradient-to-r from-red-100 to-red-200 border border-red-400 rounded"></div>
+          <span class="text-gray-700">Cancelled</span>
         </div>
         <div class="flex items-center gap-2">
           <div class="w-4 h-4 bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-400 rounded"></div>
@@ -510,22 +824,54 @@ $month_name = date('F', mktime(0, 0, 0, $current_month, 1, $current_year));
     <!-- Prescribe Medicine Form -->
     <div class="bg-white rounded-2xl shadow-md p-6 mb-8">
       <h3 class="font-bold text-lg text-gray-900 mb-4">Prescribe Medicine</h3>
-      <form class="grid gap-4 md:grid-cols-2">
-        <input type="text" placeholder="Patient Name" class="border p-2 rounded focus:ring-2 focus:ring-green-400">
-        <input type="text" placeholder="Medication" class="border p-2 rounded focus:ring-2 focus:ring-green-400">
-        <input type="text" placeholder="Dosage" class="border p-2 rounded focus:ring-2 focus:ring-green-400">
-        <input type="text" placeholder="Duration" class="border p-2 rounded focus:ring-2 focus:ring-green-400">
-        <textarea placeholder="Instructions" class="border p-2 rounded col-span-2 focus:ring-2 focus:ring-green-400"></textarea>
-        <button class="bg-green-600 text-white py-2 px-4 rounded hover:bg-green-700 transition col-span-2">Generate Prescription</button>
+      <form id="prescriptionForm" class="grid gap-4 md:grid-cols-2">
+        <div class="col-span-2 md:col-span-1">
+          <label class="text-xs font-semibold text-gray-600 mb-1 block">Patient (from today’s list)</label>
+          <select id="rxPatient" name="student_id" class="w-full border p-2 rounded focus:ring-2 focus:ring-green-400" required>
+            <option value="">Select patient</option>
+            <?php foreach ($patient_options as $pid => $pname): ?>
+              <option value="<?php echo (int)$pid; ?>"><?php echo htmlspecialchars($pname); ?></option>
+            <?php endforeach; ?>
+          </select>
+        </div>
+        <div class="col-span-2 md:col-span-1">
+          <label class="text-xs font-semibold text-gray-600 mb-1 block">Link to appointment (optional)</label>
+          <select id="rxAppointment" name="appointment_id" class="w-full border p-2 rounded focus:ring-2 focus:ring-green-400">
+            <option value="">Not linked</option>
+            <?php foreach ($all_appointments as $apt): ?>
+              <option value="<?php echo (int)$apt['id']; ?>">
+                <?php echo htmlspecialchars($apt['patient_name']); ?> — <?php echo date('M d, Y', strtotime($apt['appointment_date'])); ?> at <?php echo date('h:i A', strtotime($apt['appointment_time'])); ?>
+              </option>
+            <?php endforeach; ?>
+          </select>
+        </div>
+        <input type="text" id="rxTitle" name="title" placeholder="Title" class="border p-2 rounded focus:ring-2 focus:ring-green-400 col-span-2" value="Prescription">
+        <input type="text" id="rxDiagnosis" name="diagnosis" placeholder="Diagnosis" class="border p-2 rounded focus:ring-2 focus:ring-green-400 col-span-2">
+        <div class="col-span-2">
+          <label class="text-xs font-semibold text-gray-600 mb-1 block">Medications</label>
+          <div class="medication-autocomplete">
+            <textarea id="rxMedications" name="medications" placeholder="Type medication name (e.g., Napa, Paracetamol). Press Enter to add more." class="border p-2 rounded focus:ring-2 focus:ring-green-400 w-full" rows="3" required></textarea>
+            <div id="medicationSuggestions" class="medication-suggestions hidden"></div>
+          </div>
+          <p class="text-xs text-gray-500 mt-1">Start typing to see suggestions. Add dosage after medicine name.</p>
+        </div>
+        <textarea id="rxInstructions" name="instructions" placeholder="Instructions / advice" class="border p-2 rounded focus:ring-2 focus:ring-green-400 col-span-2" rows="2"></textarea>
+        <div class="col-span-2 flex items-center gap-3">
+          <input type="date" id="rxFollowUp" name="follow_up_date" class="border p-2 rounded focus:ring-2 focus:ring-green-400">
+          <label class="flex items-center gap-2 text-sm text-gray-700">
+            <input type="checkbox" id="rxComplete" name="complete_appointment" class="accent-green-600"> Mark appointment completed
+          </label>
+        </div>
+        <div class="col-span-2 flex items-center gap-3">
+          <button id="rxSubmit" type="submit" class="bg-green-600 text-white py-2 px-5 rounded hover:bg-green-700 transition">Save & notify student</button>
+          <span id="rxFeedback" class="text-sm text-gray-600"></span>
+        </div>
       </form>
     </div>
 
     <!-- Suggest Medical Tests -->
     <div class="bg-white rounded-2xl shadow-md p-6 mb-8">
-      <div class="flex items-center justify-between mb-4">
-        <h3 class="font-bold text-lg text-gray-900">Suggest Medical Tests</h3>
-        <span class="text-xs text-gray-500">Notify patient immediately</span>
-      </div>
+      <h3 class="font-bold text-lg text-gray-900 mb-4">Suggest Medical Tests</h3>
       <form id="testRequestForm" class="grid gap-4 md:grid-cols-3">
         <div class="md:col-span-1 col-span-3">
           <label class="block text-xs font-semibold text-gray-600 mb-1">Patient</label>
@@ -571,7 +917,7 @@ $month_name = date('F', mktime(0, 0, 0, $current_month, 1, $current_year));
           <textarea id="testNotes" name="notes" placeholder="Add preparation details or instructions" class="w-full border p-2 rounded focus:ring-2 focus:ring-green-400" rows="3"></textarea>
         </div>
         <div class="col-span-3 flex items-center gap-3">
-          <button id="testRequestSubmit" type="submit" class="bg-blue-600 text-white py-2 px-5 rounded hover:bg-blue-700 transition">Request Test</button>
+          <button id="testRequestSubmit" type="submit" class="bg-green-600 text-white py-2 px-5 rounded hover:bg-green-700 transition">Request Test</button>
           <span id="testRequestFeedback" class="text-sm text-gray-600"></span>
         </div>
       </form>
@@ -854,9 +1200,10 @@ $month_name = date('F', mktime(0, 0, 0, $current_month, 1, $current_year));
             document.getElementById('reasonForVisitView').textContent = apt.reason_for_visit;
             document.getElementById('appointmentStatusView').textContent = apt.status.charAt(0).toUpperCase() + apt.status.slice(1);
             document.getElementById('appointmentStatusView').className = 'font-semibold text-gray-900 text-sm inline-block px-3 py-1 rounded-full ' + 
-              (apt.status === 'confirmed' ? 'bg-green-100 text-green-800' : 
-               apt.status === 'pending' ? 'bg-yellow-100 text-yellow-800' : 
-               apt.status === 'completed' ? 'bg-blue-100 text-blue-800' : 'bg-red-100 text-red-800');
+              (apt.status === 'completed' ? 'bg-green-100 text-green-800' : 
+               apt.status === 'cancelled' ? 'bg-red-100 text-red-800' : 
+               apt.status === 'confirmed' ? 'bg-blue-100 text-blue-800' : 
+               apt.status === 'pending' ? 'bg-amber-100 text-amber-800' : 'bg-gray-100 text-gray-800');
             document.getElementById('appointmentNotesView').textContent = apt.notes || 'No notes added';
 
             // Populate edit state

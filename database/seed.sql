@@ -76,3 +76,23 @@ CREATE TABLE IF NOT EXISTS `test_requests` (
   KEY `idx_student_status` (`student_id`, `status`),
   KEY `idx_doctor_created` (`doctor_id`, `created_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Prescriptions table
+CREATE TABLE IF NOT EXISTS `prescriptions` (
+  `id` INT UNSIGNED NOT NULL AUTO_INCREMENT,
+  `appointment_id` INT UNSIGNED DEFAULT NULL,
+  `doctor_id` INT UNSIGNED NOT NULL,
+  `student_id` INT UNSIGNED NOT NULL,
+  `title` VARCHAR(150) NOT NULL DEFAULT 'Prescription',
+  `diagnosis` TEXT,
+  `medications` TEXT NOT NULL,
+  `instructions` TEXT,
+  `follow_up_date` DATE DEFAULT NULL,
+  `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (`id`),
+  FOREIGN KEY (`appointment_id`) REFERENCES `appointments` (`id`) ON DELETE SET NULL,
+  FOREIGN KEY (`doctor_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+  FOREIGN KEY (`student_id`) REFERENCES `users` (`id`) ON DELETE CASCADE,
+  KEY `idx_student_created` (`student_id`, `created_at`),
+  KEY `idx_doctor_created` (`doctor_id`, `created_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

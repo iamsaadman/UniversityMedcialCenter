@@ -1,128 +1,155 @@
 <?php
-// Example doctors array
-$doctors = [
-    ['name' => 'Dr. John Smith', 'department' => 'Cardiology'],
-    ['name' => 'Dr. Emily Adams', 'department' => 'Neurology'],
-    ['name' => 'Dr. Mark Lee', 'department' => 'Dermatology'],
-    ['name' => 'Dr. Susan Clark', 'department' => 'Pediatrics']
-];
-?>
+session_start();
+require_once 'includes/dp.php';
 
+if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'student') {
+  header('Location: login.php');
+  exit();
+}
+
+$student_id = $_SESSION['user_id'];
+$student_name = $_SESSION['fullname'] ?? 'Student';
+
+$appointments = [];
+$appt_stmt = $mysqli->prepare(
+  "SELECT a.id, a.appointment_date, a.appointment_time, a.status, a.reason_for_visit, a.notes, d.fullname AS doctor_name, d.id AS doctor_id
+   FROM appointments a
+   JOIN users d ON d.id = a.doctor_id
+   WHERE a.student_id = ?
+   ORDER BY a.appointment_date ASC, a.appointment_time ASC"
+);
+if ($appt_stmt) {
+  $appt_stmt->bind_param('i', $student_id);
+  $appt_stmt->execute();
+  $res = $appt_stmt->get_result();
+  $appointments = $res->fetch_all(MYSQLI_ASSOC);
+  $appt_stmt->close();
+}
+
+$current_id = isset($_GET['id']) ? intval($_GET['id']) : 0;
+if ($current_id === 0 && !empty($appointments)) {
+  $current_id = (int)$appointments[0]['id'];
+}
+
+$current_appt = null;
+if ($current_id > 0) {
+  $detail_stmt = $mysqli->prepare(
+    "SELECT a.*, d.fullname AS doctor_name, d.id AS doctor_id
+     FROM appointments a
+     JOIN users d ON d.id = a.doctor_id
+     WHERE a.id = ? AND a.student_id = ?"
+  );
+  if ($detail_stmt) {
+    $detail_stmt->bind_param('ii', $current_id, $student_id);
+    $detail_stmt->execute();
+    $detail_res = $detail_stmt->get_result();
+    if ($detail_res->num_rows > 0) {
+      $current_appt = $detail_res->fetch_assoc();
+    }
+    $detail_stmt->close();
+  }
+}
+
+$flash_success = isset($_GET['success']) ? ($_GET['success'] === '1') : false;
+$flash_error = isset($_GET['error']) ? $_GET['error'] : '';
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Book Appointment | Health Portal</title>
+  <title>Reschedule Appointment | Student Portal</title>
   <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body class="bg-gray-50">
+<body class="bg-gray-50 min-h-screen">
 
-<!-- NAVBAR -->
-<nav class="bg-blue-900 shadow px-6 py-4 flex justify-between items-center">
-  <div class="flex items-center gap-2">
-    <!-- Blue Heart Logo -->
-    <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-blue-400" fill="currentColor" viewBox="0 0 24 24">
-      <path d="M12 21s-7.5-4.8-10-9.6C.6 7.2 3.1 3 7.2 3c2.1 0 3.6 1.2 4.8 2.7C13.2 4.2 14.7 3 16.8 3c4.1 0 6.6 4.2 5.2 8.4C19.5 16.2 12 21 12 21z"/>
-    </svg>
-    <span class="font-bold text-xl text-white">Book Appointment</span>
+<nav class="bg-white shadow px-6 py-4 flex justify-between items-center sticky top-0 z-30">
+  <div class="flex items-center gap-3">
+    <div class="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-lg flex items-center justify-center shadow-md">
+      <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-white" fill="currentColor" viewBox="0 0 24 24">
+        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm3.5-9c.83 0 1.5-.67 1.5-1.5S16.33 8 15.5 8 14 8.67 14 9.5s.67 1.5 1.5 1.5zm-7 0c.83 0 1.5-.67 1.5-1.5S9.33 8 8.5 8 7 8.67 7 9.5 7.67 11 8.5 11zm3.5 6.5c2.33 0 4.31-1.46 5.11-3.5H6.89c.8 2.04 2.78 3.5 5.11 3.5z"/>
+      </svg>
+    </div>
+    <div>
+      <h1 class="font-bold text-lg text-gray-800">Reschedule Appointment</h1>
+      <p class="text-xs text-gray-500">Manage your bookings</p>
+    </div>
   </div>
-  <a href="studentportal.php" class="text-white hover:text-blue-300">← Back to Home</a>
+  <a href="studentportal.php" class="text-blue-600 font-semibold hover:underline">← Back to Dashboard</a>
 </nav>
 
-<!-- MAIN CONTENT -->
-<div class="p-6">
+<div class="max-w-5xl mx-auto p-6 space-y-6">
+  <?php if ($flash_success): ?>
+    <div class="rounded-lg bg-green-50 border border-green-200 text-green-800 px-4 py-3">Appointment updated successfully.</div>
+  <?php endif; ?>
+  <?php if ($flash_error): ?>
+    <div class="rounded-lg bg-red-50 border border-red-200 text-red-800 px-4 py-3"><?php echo htmlspecialchars($flash_error); ?></div>
+  <?php endif; ?>
 
-  <!-- Header Card -->
-  <div class="bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-2xl p-6 shadow-xl mb-6">
-    <h2 class="text-2xl font-bold mb-2">Schedule Your Appointment</h2>
-    <p>Select a doctor, date, and time that works best for you.</p>
+  <div class="bg-white rounded-2xl shadow p-6">
+    <div class="flex items-center gap-2 mb-4">
+      <div class="w-1 h-6 bg-blue-500 rounded"></div>
+      <h2 class="text-xl font-bold text-gray-900">Select Appointment</h2>
+    </div>
+    <?php if (empty($appointments)): ?>
+      <p class="text-sm text-gray-600">You have no appointments to reschedule.</p>
+    <?php else: ?>
+      <form method="get" class="flex gap-3 items-center">
+        <label class="text-sm text-gray-700">Choose:</label>
+        <select name="id" class="border rounded-lg px-3 py-2 text-sm" onchange="this.form.submit()">
+          <?php foreach ($appointments as $apt):
+            $label = sprintf('%s with Dr. %s at %s', date('M d, Y', strtotime($apt['appointment_date'])), $apt['doctor_name'], date('g:i A', strtotime($apt['appointment_time'])));
+          ?>
+            <option value="<?php echo (int)$apt['id']; ?>" <?php echo $current_id == $apt['id'] ? 'selected' : ''; ?>>
+              <?php echo htmlspecialchars($label); ?>
+            </option>
+          <?php endforeach; ?>
+        </select>
+      </form>
+    <?php endif; ?>
   </div>
 
-  <!-- Step 1: Select Doctor -->
-  <div class="bg-white rounded-2xl p-6 shadow-md mb-6">
-    <h3 class="font-semibold text-gray-800 mb-3">Step 1: Select a Doctor</h3>
-    <div class="space-y-3">
-      <?php foreach ($doctors as $doctor): ?>
-        <label class="flex items-center gap-3 p-3 border rounded-lg hover:bg-blue-50 cursor-pointer">
-          <input type="radio" name="doctor" value="<?php echo $doctor['name']; ?>" class="accent-blue-500">
-          <div>
-            <p class="font-semibold"><?php echo $doctor['name']; ?></p>
-            <p class="text-gray-500 text-sm"><?php echo $doctor['department']; ?></p>
-          </div>
-        </label>
-      <?php endforeach; ?>
+  <?php if ($current_appt): ?>
+  <div class="bg-white rounded-2xl shadow p-6">
+    <div class="flex items-center gap-2 mb-4">
+      <div class="w-1 h-6 bg-green-500 rounded"></div>
+      <h2 class="text-xl font-bold text-gray-900">Update Appointment</h2>
     </div>
+    <p class="text-sm text-gray-600 mb-4">Doctor: <span class="font-semibold text-gray-900">Dr. <?php echo htmlspecialchars($current_appt['doctor_name']); ?></span></p>
+
+    <form method="post" action="student_update_appointment.php" class="space-y-4">
+      <input type="hidden" name="id" value="<?php echo (int)$current_appt['id']; ?>">
+
+      <div>
+        <label class="block text-sm font-semibold text-gray-700 mb-1">Date</label>
+        <input type="date" name="appointment_date" value="<?php echo htmlspecialchars($current_appt['appointment_date']); ?>" class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" required>
+      </div>
+
+      <div>
+        <label class="block text-sm font-semibold text-gray-700 mb-1">Time</label>
+        <input type="time" name="appointment_time" value="<?php echo htmlspecialchars(substr($current_appt['appointment_time'], 0, 5)); ?>" class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" required>
+      </div>
+
+      <div>
+        <label class="block text-sm font-semibold text-gray-700 mb-1">Reason for Visit</label>
+        <input type="text" name="reason_for_visit" value="<?php echo htmlspecialchars($current_appt['reason_for_visit']); ?>" class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500" required>
+      </div>
+
+      <div>
+        <label class="block text-sm font-semibold text-gray-700 mb-1">Notes (optional)</label>
+        <textarea name="notes" rows="3" class="w-full border rounded-lg px-3 py-2 focus:ring-2 focus:ring-blue-500"><?php echo htmlspecialchars($current_appt['notes'] ?? ''); ?></textarea>
+      </div>
+
+      <p class="text-xs text-gray-500">Status will be set to Pending after reschedule. Your doctor will be notified.</p>
+
+      <div class="flex gap-3">
+        <a href="studentportal.php" class="px-4 py-2 rounded-lg border text-gray-700 hover:bg-gray-50">Cancel</a>
+        <button type="submit" class="px-5 py-2 rounded-lg bg-blue-600 text-white font-semibold hover:bg-blue-700">Save Changes</button>
+      </div>
+    </form>
   </div>
-
-  <!-- Step 2: Select Date -->
-  <div class="bg-white rounded-2xl p-6 shadow-md mb-6">
-    <h3 class="font-semibold text-gray-800 mb-3">Step 2: Select Date</h3>
-    <input type="date" name="appointment_date" class="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-500">
-  </div>
-
-  <!-- Step 3: Select Time -->
-  <div class="bg-white rounded-2xl p-6 shadow-md mb-6">
-    <h3 class="font-semibold text-gray-800 mb-3">Step 3: Select Time</h3>
-    <div class="grid grid-cols-3 md:grid-cols-4 gap-3">
-      <?php
-      $startHour = 9;
-      $endHour = 16;
-      $minutes = ['00', '30'];
-      foreach(range($startHour, $endHour) as $h) {
-          foreach($minutes as $m) {
-              $time = sprintf("%02d:%s", $h, $m);
-              echo "<button type='button' class='py-2 px-3 rounded-lg border border-blue-300 hover:bg-blue-50 text-gray-700'>$time</button>";
-          }
-      }
-      ?>
-    </div>
-  </div>
-
-  <!-- Appointment Summary -->
-  <div class="bg-white rounded-2xl p-6 shadow-md mb-6">
-    <h3 class="font-semibold text-gray-800 mb-3">Appointment Summary</h3>
-    <div class="mb-3">
-      <label class="block text-gray-700 mb-1">Reason for Visit</label>
-      <input type="text" name="reason" placeholder="Describe your reason" class="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-500">
-    </div>
-    <div class="mb-3">
-      <label class="block text-gray-700 mb-1">Additional Notes (Optional)</label>
-      <textarea name="notes" placeholder="Any additional notes" class="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-500"></textarea>
-    </div>
-
-    <!-- Your Selection Card -->
-    <div class="bg-gray-100 p-4 rounded-lg mb-3">
-      <p><strong>Doctor:</strong> Not Selected</p>
-      <p><strong>Date:</strong> Not Selected</p>
-      <p><strong>Time:</strong> Not Selected</p>
-    </div>
-
-    <!-- Confirm Button -->
-    <button class="bg-blue-600 text-white py-3 px-6 rounded-xl font-semibold hover:bg-blue-700 transition">Confirm Appointment</button>
-  </div>
-
+  <?php endif; ?>
 </div>
-
-<!-- FOOTER -->
-<footer class="bg-blue-900 text-white p-6 mt-6">
-  <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-4">
-    <div>
-      <h4 class="font-bold mb-2">Contact Info</h4>
-      <p>Phone: 123-456-789</p>
-      <p>Email: info@universityhealth.edu</p>
-    </div>
-    <div>
-      <h4 class="font-bold mb-2">Hours of Operation</h4>
-      <p>Open 24/7</p>
-    </div>
-    <div>
-      <h4 class="font-bold mb-2">Campus Map</h4>
-      <p>Map Placeholder</p>
-    </div>
-  </div>
-  <div class="text-center text-sm">&copy; 2026 University Medical Center. All rights reserved.</div>
-</footer>
 
 </body>
 </html>
