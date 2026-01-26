@@ -53,6 +53,62 @@ if (isset($_GET['success']) && $_GET['success'] === '1') {
 </head>
 <body class="bg-gray-50">
 
+<!-- EMERGENCY BUTTON - Fixed position bottom left -->
+<button id="emergencyBtn" class="fixed bottom-6 left-6 z-50 w-16 h-16 rounded-full bg-red-600 hover:bg-red-700 shadow-lg hover:shadow-xl transition transform hover:scale-110 flex items-center justify-center animate-pulse" title="Emergency Services">
+  <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8 text-white" fill="white" viewBox="0 0 24 24">
+    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm3.5-9c.83 0 1.5-.67 1.5-1.5S16.33 8 15.5 8 14 8.67 14 9.5s.67 1.5 1.5 1.5zm-7 0c.83 0 1.5-.67 1.5-1.5S9.33 8 8.5 8 7 8.67 7 9.5 7.67 11 8.5 11zm3.5 6.5c2.33 0 4.31-1.46 5.11-3.5H6.89c.8 2.04 2.78 3.5 5.11 3.5z"/>
+  </svg>
+</button>
+
+<!-- EMERGENCY MODAL -->
+<div id="emergencyModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-40 flex items-center justify-center">
+  <div class="bg-white rounded-3xl p-8 shadow-2xl w-full max-w-sm mx-4">
+    <div class="flex items-center justify-between mb-6">
+      <h2 class="text-2xl font-bold text-red-600">Emergency Services</h2>
+      <button id="closeModal" class="text-gray-600 hover:text-gray-800 text-2xl">&times;</button>
+    </div>
+    
+    <div class="space-y-4">
+      <div class="bg-red-50 border-l-4 border-red-600 p-4 rounded">
+        <p class="text-gray-700 font-semibold mb-2">Campus Emergency:</p>
+        <a href="tel:333" class="text-red-600 hover:text-red-700 font-bold text-lg">📞 333</a>
+      </div>
+      
+      <div class="bg-red-50 border-l-4 border-red-600 p-4 rounded">
+        <p class="text-gray-700 font-semibold mb-2">Crisis Hotline:</p>
+        <a href="tel:999" class="text-red-600 hover:text-red-700 font-bold text-lg">📞 999</a>
+      </div>
+    </div>
+    
+    <button id="closeModalBtn" class="w-full mt-6 bg-gray-600 hover:bg-gray-700 text-white py-2 px-4 rounded-lg font-semibold">Close</button>
+  </div>
+</div>
+
+<script>
+  const emergencyBtn = document.getElementById('emergencyBtn');
+  const emergencyModal = document.getElementById('emergencyModal');
+  const closeModal = document.getElementById('closeModal');
+  const closeModalBtn = document.getElementById('closeModalBtn');
+  
+  emergencyBtn.addEventListener('click', () => {
+    emergencyModal.classList.remove('hidden');
+  });
+  
+  closeModal.addEventListener('click', () => {
+    emergencyModal.classList.add('hidden');
+  });
+  
+  closeModalBtn.addEventListener('click', () => {
+    emergencyModal.classList.add('hidden');
+  });
+  
+  emergencyModal.addEventListener('click', (e) => {
+    if (e.target === emergencyModal) {
+      emergencyModal.classList.add('hidden');
+    }
+  });
+</script>
+
 <!-- NAVBAR -->
 <nav class="bg-blue-900 shadow px-6 py-4 flex justify-between items-center">
   <div class="flex items-center gap-2">
@@ -79,45 +135,37 @@ if (isset($_GET['success']) && $_GET['success'] === '1') {
   <!-- Header Card -->
   <div class="bg-gradient-to-r from-blue-600 to-blue-500 text-white rounded-2xl p-6 shadow-xl mb-6">
     <h2 class="text-2xl font-bold mb-2">Schedule Your New Appointment</h2>
-    <p>Select a doctor, date, and time that works best for you.</p>
+    <p>Select a date and time that works best for you.</p>
   </div>
 
   <!-- Appointment Form -->
   <form action="appointment_process.php" method="POST" class="space-y-6" id="appointmentForm">
 
-    <!-- Step 1: Select Doctor -->
-    <div class="bg-white rounded-2xl p-6 shadow-md">
-      <h3 class="font-semibold text-gray-800 mb-3">Step 1: Select a Doctor</h3>
-      <?php if (!empty($doctors)): ?>
-        <div class="space-y-3">
-          <?php foreach ($doctors as $doctor): ?>
-            <label class="flex items-center gap-3 p-3 border rounded-lg hover:bg-blue-50 cursor-pointer">
-              <input type="radio" name="doctor_id" value="<?php echo (int)$doctor['id']; ?>" class="accent-blue-500" required>
-              <div>
-                <p class="font-semibold"><?php echo htmlspecialchars($doctor['fullname']); ?></p>
-              </div>
-            </label>
-          <?php endforeach; ?>
-        </div>
-      <?php else: ?>
-        <p class="text-gray-600">No doctors available at the moment.</p>
-      <?php endif; ?>
-    </div>
+    <!-- Auto-selected Doctor -->
+    <?php if (!empty($doctors)): ?>
+      <div class="bg-blue-50 rounded-2xl p-6 shadow-md border-l-4 border-blue-600">
+        <p class="text-gray-700"><strong>Assigned Doctor:</strong> <?php echo htmlspecialchars($doctors[0]['fullname']); ?></p>
+        <input type="hidden" name="doctor_id" value="<?php echo (int)$doctors[0]['id']; ?>">
+      </div>
+    <?php else: ?>
+      <div class="bg-red-50 rounded-2xl p-6 shadow-md border-l-4 border-red-600">
+        <p class="text-red-700"><strong>No doctors available at the moment.</strong></p>
+      </div>
+    <?php endif; ?>
 
-    <!-- Step 2: Select Date -->
+    <!-- Step 1: Select Date -->
     <div class="bg-white rounded-2xl p-6 shadow-md">
-      <h3 class="font-semibold text-gray-800 mb-3">Step 2: Select Date</h3>
+      <h3 class="font-semibold text-gray-800 mb-3">Step 1: Select Date</h3>
       <input type="date" name="appointment_date" id="appointmentDate" class="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-500" required>
       <p class="text-gray-500 text-sm mt-2">Select a date at least 1 day from now</p>
     </div>
 
-    <!-- Step 3: Select Time -->
+    <!-- Step 2: Select Time -->
     <div class="bg-white rounded-2xl p-6 shadow-md">
-      <h3 class="font-semibold text-gray-800 mb-3">Step 3: Select Time</h3>
-      <div class="grid grid-cols-3 md:grid-cols-4 gap-3" id="timeSlots">
-        <!-- Generated by JavaScript -->
-      </div>
-      <input type="hidden" name="appointment_time" id="selectedTime" required>
+      <h3 class="font-semibold text-gray-800 mb-3">Step 2: Select Time</h3>
+      <select name="appointment_time" id="selectedTime" class="w-full p-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 focus:border-blue-500" required>
+        <option value="">-- Select a time slot --</option>
+      </select>
     </div>
 
     <!-- Appointment Summary -->
@@ -178,45 +226,25 @@ if (isset($_GET['success']) && $_GET['success'] === '1') {
     const startHour = 9;
     const endHour = 16;
     const minutes = ['00', '30'];
-    const container = document.getElementById('timeSlots');
-    container.innerHTML = '';
+    const select = document.getElementById('selectedTime');
     
     for (let h = startHour; h <= endHour; h++) {
       for (let m of minutes) {
         const time = `${String(h).padStart(2, '0')}:${m}`;
-        const button = document.createElement('button');
-        button.type = 'button';
-        button.className = 'py-2 px-3 rounded-lg border border-blue-300 hover:bg-blue-50 text-gray-700 transition';
-        button.textContent = time;
-        button.onclick = (e) => selectTime(e, time);
-        container.appendChild(button);
+        const option = document.createElement('option');
+        option.value = time;
+        option.textContent = time;
+        select.appendChild(option);
       }
     }
   }
 
-  // Select time slot
-  function selectTime(e, time) {
-    e.preventDefault();
-    document.getElementById('selectedTime').value = time;
-    
-    // Update button styles
-    document.querySelectorAll('#timeSlots button').forEach(btn => {
-      btn.classList.remove('bg-blue-600', 'text-white', 'border-blue-600');
-      btn.classList.add('border-blue-300', 'hover:bg-blue-50', 'text-gray-700');
-    });
-    
-    e.target.classList.add('bg-blue-600', 'text-white', 'border-blue-600');
-    e.target.classList.remove('border-blue-300', 'hover:bg-blue-50', 'text-gray-700');
-    
-    updateSummary();
-  }
-
   // Update summary display
   function updateSummary() {
-    // Doctor
-    const doctorRadio = document.querySelector('input[name="doctor_id"]:checked');
-    if (doctorRadio) {
-      const doctor = doctors.find(d => d.id == doctorRadio.value);
+    // Doctor (now auto-selected)
+    const doctorHidden = document.querySelector('input[name="doctor_id"]');
+    if (doctorHidden && doctorHidden.value) {
+      const doctor = doctors.find(d => d.id == doctorHidden.value);
       document.getElementById('summaryDoctor').textContent = doctor ? doctor.fullname : 'Not Selected';
     } else {
       document.getElementById('summaryDoctor').textContent = 'Not Selected';
@@ -248,22 +276,19 @@ if (isset($_GET['success']) && $_GET['success'] === '1') {
   document.addEventListener('DOMContentLoaded', () => {
     generateTimeSlots();
     setMinDate();
-    
-    document.querySelectorAll('input[name="doctor_id"]').forEach(radio => {
-      radio.addEventListener('change', updateSummary);
-    });
+    updateSummary();
     
     document.getElementById('appointmentDate').addEventListener('change', updateSummary);
+    document.getElementById('selectedTime').addEventListener('change', updateSummary);
   });
 
   // Form validation before submit
   document.getElementById('appointmentForm').addEventListener('submit', (e) => {
-    const doctorRadio = document.querySelector('input[name="doctor_id"]:checked');
     const appointmentDate = document.getElementById('appointmentDate').value;
     const appointmentTime = document.getElementById('selectedTime').value;
     const reasonForVisit = document.querySelector('input[name="reason_for_visit"]').value;
 
-    if (!doctorRadio || !appointmentDate || !appointmentTime || !reasonForVisit.trim()) {
+    if (!appointmentDate || !appointmentTime || !reasonForVisit.trim()) {
       e.preventDefault();
       alert('Please fill in all required fields.');
     }

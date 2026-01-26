@@ -173,6 +173,62 @@ $random_health_tip = $health_tips[array_rand($health_tips)];
 </head>
 <body class="bg-gray-50">
 
+<!-- EMERGENCY BUTTON - Fixed position bottom left -->
+<button id="emergencyBtn" class="fixed bottom-6 left-6 z-50 w-16 h-16 rounded-full bg-red-600 hover:bg-red-700 shadow-lg hover:shadow-xl transition transform hover:scale-110 flex items-center justify-center animate-pulse" title="Emergency Services">
+  <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8 text-white" fill="white" viewBox="0 0 24 24">
+    <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm3.5-9c.83 0 1.5-.67 1.5-1.5S16.33 8 15.5 8 14 8.67 14 9.5s.67 1.5 1.5 1.5zm-7 0c.83 0 1.5-.67 1.5-1.5S9.33 8 8.5 8 7 8.67 7 9.5 7.67 11 8.5 11zm3.5 6.5c2.33 0 4.31-1.46 5.11-3.5H6.89c.8 2.04 2.78 3.5 5.11 3.5z"/>
+  </svg>
+</button>
+
+<!-- EMERGENCY MODAL -->
+<div id="emergencyModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-40 flex items-center justify-center">
+  <div class="bg-white rounded-3xl p-8 shadow-2xl w-full max-w-sm mx-4">
+    <div class="flex items-center justify-between mb-6">
+      <h2 class="text-2xl font-bold text-red-600">Emergency Services</h2>
+      <button id="closeModal" class="text-gray-600 hover:text-gray-800 text-2xl">&times;</button>
+    </div>
+    
+    <div class="space-y-4">
+      <div class="bg-red-50 border-l-4 border-red-600 p-4 rounded">
+        <p class="text-gray-700 font-semibold mb-2">Campus Emergency:</p>
+        <a href="tel:333" class="text-red-600 hover:text-red-700 font-bold text-lg">📞 333</a>
+      </div>
+      
+      <div class="bg-red-50 border-l-4 border-red-600 p-4 rounded">
+        <p class="text-gray-700 font-semibold mb-2">Crisis Hotline:</p>
+        <a href="tel:999" class="text-red-600 hover:text-red-700 font-bold text-lg">📞 999</a>
+      </div>
+    </div>
+    
+    <button id="closeModalBtn" class="w-full mt-6 bg-gray-600 hover:bg-gray-700 text-white py-2 px-4 rounded-lg font-semibold">Close</button>
+  </div>
+</div>
+
+<script>
+  const emergencyBtn = document.getElementById('emergencyBtn');
+  const emergencyModal = document.getElementById('emergencyModal');
+  const closeModal = document.getElementById('closeModal');
+  const closeModalBtn = document.getElementById('closeModalBtn');
+  
+  emergencyBtn.addEventListener('click', () => {
+    emergencyModal.classList.remove('hidden');
+  });
+  
+  closeModal.addEventListener('click', () => {
+    emergencyModal.classList.add('hidden');
+  });
+  
+  closeModalBtn.addEventListener('click', () => {
+    emergencyModal.classList.add('hidden');
+  });
+  
+  emergencyModal.addEventListener('click', (e) => {
+    if (e.target === emergencyModal) {
+      emergencyModal.classList.add('hidden');
+    }
+  });
+</script>
+
 <!-- NAVBAR (Improved Design) -->
 <nav class="bg-white shadow-md px-6 py-4 flex justify-between items-center sticky top-0 z-40">
   <!-- Logo + Portal Name -->
@@ -941,116 +997,35 @@ $random_health_tip = $health_tips[array_rand($health_tips)];
 <div class="p-6 md:p-8 min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
 
   <!-- Welcome Section -->
-  <div class="mb-8">
-    <div class="bg-gradient-to-r from-blue-600 via-blue-500 to-indigo-600 text-white rounded-3xl p-8 shadow-xl relative overflow-hidden">
-      <div class="absolute top-0 right-0 w-40 h-40 bg-white opacity-10 rounded-full -mr-20 -mt-20"></div>
-      <div class="absolute bottom-0 left-0 w-32 h-32 bg-white opacity-10 rounded-full -ml-16 -mb-16"></div>
-      <div class="relative z-10">
-        <h2 class="text-3xl md:text-4xl font-bold mb-2">Welcome back, <?php echo htmlspecialchars($student_name); ?>! 👋</h2>
-        <p class="text-blue-100 text-lg">Keep track of your health and appointments</p>
-      </div>
-    </div>
-  </div>
+  <div class="mb-6">
+  <div class="bg-gradient-to-r from-blue-600 via-blue-500 to-indigo-600 text-white rounded-2xl px-6 py-3 shadow-lg relative overflow-hidden">
+    
+    <div class="absolute top-0 right-0 w-32 h-32 bg-white opacity-10 rounded-full -mr-16 -mt-16"></div>
+    <div class="absolute bottom-0 left-0 w-24 h-24 bg-white opacity-10 rounded-full -ml-12 -mb-12"></div>
 
-  <!-- Quick Stats Row -->
-  <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-    <!-- Appointments Card -->
-    <div class="bg-white rounded-2xl p-6 shadow-md hover:shadow-lg transition border-t-4 border-blue-500">
-      <div class="flex justify-between items-start mb-4">
-        <div>
-          <p class="text-gray-600 text-sm font-semibold uppercase tracking-wide">Upcoming</p>
-          <p class="text-3xl font-bold text-gray-900 mt-1"><?php echo $upcoming_count; ?></p>
-        </div>
-        <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-          <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10m7 8H3a2 2 0 01-2-2V7a2 2 0 012-2h16a2 2 0 012 2v12a2 2 0 01-2 2z"/>
-          </svg>
-        </div>
-      </div>
-      <p class="text-gray-600 text-sm">appointments</p>
-    </div>
-
-    <!-- Health Reports Card -->
-    <div class="bg-white rounded-2xl p-6 shadow-md hover:shadow-lg transition border-t-4 border-green-500">
-      <div class="flex justify-between items-start mb-4">
-        <div>
-          <p class="text-gray-600 text-sm font-semibold uppercase tracking-wide">Doctor Test Requests</p>
-          <p class="text-3xl font-bold text-gray-900 mt-1"><?php echo $lab_reports_count; ?></p>
-        </div>
-        <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-          <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m7 0a9 9 0 11-18 0 9 9 0 0118 0z"/>
-          </svg>
-        </div>
-      </div>
-      <p class="text-gray-600 text-sm">Total requests from your doctor</p>
-    </div>
-
-    <!-- Prescriptions Card -->
-    <div class="bg-white rounded-2xl p-6 shadow-md hover:shadow-lg transition border-t-4 border-orange-500">
-      <div class="flex justify-between items-start mb-4">
-        <div>
-          <p class="text-gray-600 text-sm font-semibold uppercase tracking-wide">Prescriptions</p>
-          <p class="text-3xl font-bold text-gray-900 mt-1"><?php echo $unread_count; ?></p>
-        </div>
-        <div class="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
-          <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V4a2 2 0 10-4 0v1.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1h6z"/>
-          </svg>
-        </div>
-      </div>
-      <p class="text-gray-600 text-sm">
-        <?php echo $latest_rx_title !== '' ? ('Latest Rx: ' . htmlspecialchars($latest_rx_title)) : 'No prescriptions yet'; ?>
+    <div class="relative z-10">
+      <h2 class="text-xl md:text-2xl font-semibold mb-0 leading-tight">
+        Welcome back, <?php echo htmlspecialchars($student_name); ?>! 👋
+      </h2>
+      <p class="text-blue-100 text-sm leading-tight">
+        Keep track of your health and appointments
       </p>
     </div>
+
   </div>
+</div>
+
 
   <!-- Main Content Grid -->
   <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+
+    
     
     <!-- Left Column (2/3 width) -->
     <div class="lg:col-span-2 space-y-8">
-      
-      <!-- Nearby Hospitals Map -->
-      <div class="bg-white rounded-2xl p-0 shadow-md overflow-hidden border border-gray-100">
-        <div class="p-6 border-b border-gray-100 bg-gradient-to-r from-sky-50 to-transparent">
-          <h3 class="font-bold text-gray-900 mb-1 flex items-center gap-2 text-lg">
-            <div class="w-1 h-6 bg-sky-500 rounded"></div>
-            Nearby Hospitals
-          </h3>
-          <p id="mapStatus" class="text-xs text-gray-500">Finding your location… please allow location access.</p>
-        </div>
-        <div id="hospitalMap" style="height: 300px; width: 100%;"></div>
-      </div>
-      
-      <!-- Recent Notifications -->
-      <?php if ($unread_count > 0): ?>
-      <div class="bg-white rounded-2xl p-6 shadow-md hover:shadow-lg transition border border-gray-100">
-        <div class="flex items-center gap-2 mb-5">
-          <div class="w-1 h-6 bg-blue-500 rounded"></div>
-          <h3 class="font-bold text-lg text-gray-900">Recent Updates</h3>
-          <span class="ml-auto bg-blue-100 text-blue-700 text-xs font-semibold px-3 py-1 rounded-full"><?php echo $unread_count; ?> new</span>
-        </div>
-        <div class="space-y-3">
-          <?php foreach (array_slice($notifications, 0, 3) as $notif): ?>
-            <div class="flex gap-4 p-4 bg-gradient-to-r from-blue-50 to-transparent rounded-xl border-l-4 border-blue-500 hover:shadow-md transition cursor-pointer notification-item"
-                 data-type="<?php echo htmlspecialchars($notif['type']); ?>"
-                 data-ref="<?php echo (int)$notif['reference_id']; ?>"
-                 data-message="<?php echo htmlspecialchars($notif['message'], ENT_QUOTES); ?>"
-                 data-created="<?php echo htmlspecialchars($notif['created_at']); ?>">
-              <div class="w-3 h-3 bg-blue-500 rounded-full mt-1 flex-shrink-0"></div>
-              <div class="flex-1 min-w-0">
-                <p class="text-gray-800 font-medium text-sm"><?php echo htmlspecialchars($notif['message']); ?></p>
-                <p class="text-gray-500 text-xs mt-1"><?php echo date('M d, H:i', strtotime($notif['created_at'])); ?></p>
-              </div>
-            </div>
-          <?php endforeach; ?>
-        </div>
-      </div>
-      <?php endif; ?>
 
-      <!-- Calendar Section -->
-      <div class="bg-white rounded-2xl shadow-md p-6 mb-8">
+    <div class="lg:col-span-2">
+      <div class="bg-white rounded-2xl shadow-md p-6">
         <div class="flex justify-between items-center mb-6">
           <div>
             <h3 class="font-bold text-lg text-gray-900 flex items-center gap-2">
@@ -1081,7 +1056,7 @@ $random_health_tip = $health_tips[array_rand($health_tips)];
 
           <!-- Empty cells for days before month starts -->
           <?php for ($i = 0; $i < $first_day; $i++): ?>
-            <div class="p-1 bg-white rounded min-h-16"></div>
+            <div class="p-1 bg-white rounded min-h-12"></div>
           <?php endfor; ?>
 
           <!-- Days of the month -->
@@ -1093,21 +1068,19 @@ $random_health_tip = $health_tips[array_rand($health_tips)];
             $day_prescriptions = isset($prescriptions_by_date[$date_str]) ? $prescriptions_by_date[$date_str] : [];
             $total_events = count($day_appointments) + count($day_prescriptions);
           ?>
-            <div class="p-2 border rounded-lg min-h-16 <?php echo $is_today ? 'bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-400 border-2' : 'bg-white border-gray-200'; ?> hover:shadow-md transition">
+            <div class="p-1 border rounded-lg min-h-12 text-xs <?php echo $is_today ? 'bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-400 border-2' : 'bg-white border-gray-200'; ?> hover:shadow-md transition">
               <!-- Date number -->
-              <div class="font-bold text-xs mb-1 <?php echo $is_today ? 'text-blue-700' : 'text-gray-700'; ?>">
+              <div class="font-bold text-xs mb-0.5 <?php echo $is_today ? 'text-blue-700' : 'text-gray-700'; ?>">
                 <?php echo $day; ?>
               </div>
 
               <!-- Events for this day -->
-              <div class="space-y-0.5 text-xs">
+              <div class="space-y-0.5">
                 <?php if ($total_events > 0): ?>
                   <!-- Appointments -->
                   <?php foreach ($day_appointments as $apt): 
                     $status = $apt['status'] ?? 'pending';
                     $card_class = 'bg-gradient-to-r ';
-                    $hover_class = 'hover:opacity-80';
-                    $icon = '📅';
                     
                     if ($status === 'completed') {
                       $card_class .= 'from-green-100 to-green-200 text-green-800';
@@ -1121,21 +1094,19 @@ $random_health_tip = $health_tips[array_rand($health_tips)];
                       $card_class .= 'from-gray-100 to-gray-200 text-gray-800';
                     }
                   ?>
-                    <div class="<?php echo $card_class; ?> p-1 rounded cursor-pointer <?php echo $hover_class; ?> font-medium" 
+                    <div class="<?php echo $card_class; ?> p-0.5 rounded cursor-pointer hover:opacity-80 font-medium" 
                          onclick="openStudentAppointmentDetails(<?php echo $apt['id']; ?>)"
                          title="<?php echo htmlspecialchars($apt['doctor_name']); ?> - <?php echo date('h:i A', strtotime($apt['appointment_time'])); ?> (<?php echo ucfirst($status); ?>)">
-                      <div class="text-xs leading-tight"><?php echo $icon; ?> <?php echo date('h:i A', strtotime($apt['appointment_time'])); ?></div>
-                      <div class="font-semibold truncate text-xs">Dr. <?php echo htmlspecialchars(substr($apt['doctor_name'], 0, 8)); ?></div>
+                      <div class="leading-tight">📅 <?php echo date('h:i A', strtotime($apt['appointment_time'])); ?></div>
                     </div>
                   <?php endforeach; ?>
                   
                   <!-- Prescription Follow-ups -->
                   <?php foreach ($day_prescriptions as $rx): ?>
-                    <div class="bg-gradient-to-r from-purple-100 to-purple-200 text-purple-800 p-1 rounded cursor-pointer hover:opacity-80 font-medium" 
+                    <div class="bg-gradient-to-r from-purple-100 to-purple-200 text-purple-800 p-0.5 rounded cursor-pointer hover:opacity-80 font-medium" 
                          onclick="window.location.href='download_prescription.php?id=<?php echo $rx['id']; ?>'"
                          title="Follow-up: <?php echo htmlspecialchars($rx['title']); ?>">
-                      <div class="text-xs leading-tight">💊 Follow-up</div>
-                      <div class="font-semibold truncate text-xs"><?php echo htmlspecialchars(substr($rx['title'], 0, 10)); ?></div>
+                      <div class="leading-tight">💊</div>
                     </div>
                   <?php endforeach; ?>
                 <?php else: ?>
@@ -1147,34 +1118,35 @@ $random_health_tip = $health_tips[array_rand($health_tips)];
         </div>
 
         <!-- Legend -->
-        <div class="mt-4 pt-4 border-t flex flex-wrap gap-4 text-sm">
-          <div class="flex items-center gap-2">
-            <div class="w-4 h-4 bg-gradient-to-r from-green-100 to-green-200 border border-green-400 rounded"></div>
+        <div class="mt-4 pt-4 border-t flex flex-wrap gap-3 text-xs">
+          <div class="flex items-center gap-1">
+            <div class="w-3 h-3 bg-gradient-to-r from-green-100 to-green-200 border border-green-400 rounded"></div>
             <span class="text-gray-700">Completed</span>
           </div>
-          <div class="flex items-center gap-2">
-            <div class="w-4 h-4 bg-gradient-to-r from-blue-100 to-blue-200 border border-blue-400 rounded"></div>
+          <div class="flex items-center gap-1">
+            <div class="w-3 h-3 bg-gradient-to-r from-blue-100 to-blue-200 border border-blue-400 rounded"></div>
             <span class="text-gray-700">Confirmed</span>
           </div>
-          <div class="flex items-center gap-2">
-            <div class="w-4 h-4 bg-gradient-to-r from-amber-100 to-amber-200 border border-amber-400 rounded"></div>
+          <div class="flex items-center gap-1">
+            <div class="w-3 h-3 bg-gradient-to-r from-amber-100 to-amber-200 border border-amber-400 rounded"></div>
             <span class="text-gray-700">Pending</span>
           </div>
-          <div class="flex items-center gap-2">
-            <div class="w-4 h-4 bg-gradient-to-r from-red-100 to-red-200 border border-red-400 rounded"></div>
+          <div class="flex items-center gap-1">
+            <div class="w-3 h-3 bg-gradient-to-r from-red-100 to-red-200 border border-red-400 rounded"></div>
             <span class="text-gray-700">Cancelled</span>
           </div>
-          <div class="flex items-center gap-2">
-            <div class="w-4 h-4 bg-gradient-to-r from-purple-100 to-purple-200 border border-purple-400 rounded"></div>
+          <div class="flex items-center gap-1">
+            <div class="w-3 h-3 bg-gradient-to-r from-purple-100 to-purple-200 border border-purple-400 rounded"></div>
             <span class="text-gray-700">Follow-up</span>
           </div>
-          <div class="flex items-center gap-2">
-            <div class="w-4 h-4 bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-400 rounded"></div>
+          <div class="flex items-center gap-1">
+            <div class="w-3 h-3 bg-gradient-to-br from-blue-50 to-indigo-50 border-2 border-blue-400 rounded"></div>
             <span class="text-gray-700">Today</span>
           </div>
         </div>
       </div>
-
+    </div>
+      
       <!-- Upcoming Appointments (live data) -->
       <div class="bg-white rounded-2xl p-6 shadow-md hover:shadow-lg transition border border-gray-100">
         <div class="flex items-center gap-2 mb-5">
@@ -1228,56 +1200,23 @@ $random_health_tip = $health_tips[array_rand($health_tips)];
           Book New Appointment
         </a>
       </div>
+
+      <!-- Nearby Hospitals Map -->
+      <div class="bg-white rounded-2xl p-0 shadow-md overflow-hidden border border-gray-100">
+        <div class="p-6 border-b border-gray-100 bg-gradient-to-r from-sky-50 to-transparent">
+          <h3 class="font-bold text-gray-900 mb-1 flex items-center gap-2 text-lg">
+            <div class="w-1 h-6 bg-sky-500 rounded"></div>
+            Nearby Hospitals
+          </h3>
+          <p id="mapStatus" class="text-xs text-gray-500">Finding your location… please allow location access.</p>
+        </div>
+        <div id="hospitalMap" style="height: 300px; width: 100%;"></div>
+      </div>
     </div>
 
     <!-- Right Column (1/3 width) -->
     <div class="space-y-6">
       
-      <!-- Quick Actions -->
-      <div class="bg-white rounded-2xl p-6 shadow-md hover:shadow-lg transition border border-gray-100">
-        <h3 class="font-bold text-gray-900 mb-4 flex items-center gap-2">
-          <div class="w-1 h-6 bg-teal-500 rounded"></div>
-          Quick Actions
-        </h3>
-        <div class="space-y-2">
-          <a href="studentmentalhealth.php" class="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-pink-50 transition group">
-            <div class="w-10 h-10 bg-pink-100 rounded-lg flex items-center justify-center group-hover:bg-pink-200 transition">
-              <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-pink-600" fill="currentColor" viewBox="0 0 24 24">
-                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm3.5-9c.83 0 1.5-.67 1.5-1.5S16.33 8 15.5 8 14 8.67 14 9.5s.67 1.5 1.5 1.5zm-7 0c.83 0 1.5-.67 1.5-1.5S9.33 8 8.5 8 7 8.67 7 9.5 7.67 11 8.5 11zm3.5 6.5c2.33 0 4.31-1.46 5.11-3.5H6.89c.8 2.04 2.78 3.5 5.11 3.5z"/>
-              </svg>
-            </div>
-            <div>
-              <p class="font-semibold text-gray-900 text-sm">Mental Health</p>
-              <p class="text-gray-500 text-xs">Counseling Services</p>
-            </div>
-          </a>
-
-          <a href="#" class="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-green-50 transition group">
-            <div class="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center group-hover:bg-green-200 transition">
-              <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M7 12l3-3 3 3 7-7V3H3v7z"/>
-              </svg>
-            </div>
-            <div>
-              <p class="font-semibold text-gray-900 text-sm">Lab Reports</p>
-              <p class="text-gray-500 text-xs">View Results</p>
-            </div>
-          </a>
-
-          <a href="#prescriptions" class="w-full flex items-center gap-3 p-3 rounded-lg hover:bg-orange-50 transition group">
-            <div class="w-10 h-10 bg-orange-100 rounded-lg flex items-center justify-center group-hover:bg-orange-200 transition">
-              <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5 text-orange-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/>
-              </svg>
-            </div>
-            <div>
-              <p class="font-semibold text-gray-900 text-sm">Prescriptions</p>
-              <p class="text-gray-500 text-xs">Current Meds</p>
-            </div>
-          </a>
-        </div>
-      </div>
-
       <!-- Prescriptions -->
       <div id="prescriptions" class="bg-white rounded-2xl p-6 shadow-md hover:shadow-lg transition border border-gray-100">
         <h3 class="font-bold text-gray-900 mb-4 flex items-center gap-2">
@@ -1305,66 +1244,6 @@ $random_health_tip = $health_tips[array_rand($health_tips)];
         </div>
       </div>
 
-      <!-- Mental Health Support Section -->
-      <div class="bg-gradient-to-br from-purple-500 via-purple-600 to-indigo-600 text-white rounded-2xl p-6 shadow-md hover:shadow-xl transition">
-        <div class="flex items-start gap-2 mb-4">
-          <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-            <path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
-          </svg>
-          <div>
-            <h3 class="font-bold text-lg">Mental Health Support</h3>
-          </div>
-        </div>
-        
-        <div class="space-y-3 mb-4">
-          <p class="text-sm leading-relaxed opacity-95">
-            Your mental health matters. Access confidential counseling, wellness resources, and support whenever you need it.
-          </p>
-          
-          <!-- Quick Resources -->
-          <div class="grid grid-cols-2 gap-2">
-            <button onclick="openMentalHealthModal('counseling')" class="bg-white/20 hover:bg-white/30 backdrop-blur-sm p-3 rounded-lg transition text-left">
-              <div class="text-xs font-semibold mb-0.5">🧠 Counseling</div>
-              <div class="text-xs opacity-90">Book session</div>
-            </button>
-            
-            <button onclick="openMentalHealthModal('crisis')" class="bg-white/20 hover:bg-white/30 backdrop-blur-sm p-3 rounded-lg transition text-left">
-              <div class="text-xs font-semibold mb-0.5">🆘 Crisis Help</div>
-              <div class="text-xs opacity-90">Immediate support</div>
-            </button>
-            
-            <button onclick="openMentalHealthModal('wellness')" class="bg-white/20 hover:bg-white/30 backdrop-blur-sm p-3 rounded-lg transition text-left">
-              <div class="text-xs font-semibold mb-0.5">🧘 Wellness</div>
-              <div class="text-xs opacity-90">Self-care tips</div>
-            </button>
-            
-            <button onclick="openMentalHealthModal('assessment')" class="bg-white/20 hover:bg-white/30 backdrop-blur-sm p-3 rounded-lg transition text-left">
-              <div class="text-xs font-semibold mb-0.5">📋 Assessment</div>
-              <div class="text-xs opacity-90">Check-in</div>
-            </button>
-          </div>
-        </div>
-
-        <a href="studentmentalhealth.php" class="block w-full bg-white text-purple-600 font-semibold py-2.5 rounded-lg hover:bg-purple-50 transition text-center text-sm">
-          View All Resources
-        </a>
-        
-        <!-- Crisis Hotlines -->
-        <div class="mt-4 pt-4 border-t border-white/20">
-          <p class="text-xs font-semibold mb-2 opacity-90">Crisis Hotlines:</p>
-          <div class="space-y-1 text-xs opacity-90">
-            <div class="flex justify-between items-center">
-              <span>National Suicide Hotline:</span>
-              <a href="tel:988" class="font-bold hover:underline">988</a>
-            </div>
-            <div class="flex justify-between items-center">
-              <span>Crisis Text Line:</span>
-              <a href="sms:741741" class="font-bold hover:underline">Text HOME to 741741</a>
-            </div>
-          </div>
-        </div>
-      </div>
-
       <!-- Health Tip -->
       <div class="bg-gradient-to-br from-green-500 to-emerald-600 text-white rounded-2xl p-6 shadow-md hover:shadow-lg transition">
         <div class="flex items-start gap-2 mb-3">
@@ -1374,20 +1253,6 @@ $random_health_tip = $health_tips[array_rand($health_tips)];
           <h3 class="font-bold">Health Tip</h3>
         </div>
         <p class="text-sm leading-relaxed opacity-90"><?php echo htmlspecialchars($random_health_tip); ?></p>
-      </div>
-
-      <!-- Emergency Info -->
-      <div class="bg-gradient-to-br from-red-500 to-red-600 text-white rounded-2xl p-6 shadow-md">
-        <h3 class="font-bold mb-3 flex items-center gap-2">
-          <svg xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm3.5-9c.83 0 1.5-.67 1.5-1.5S16.33 8 15.5 8 14 8.67 14 9.5s.67 1.5 1.5 1.5zm-7 0c.83 0 1.5-.67 1.5-1.5S9.33 8 8.5 8 7 8.67 7 9.5 7.67 11 8.5 11zm3.5 6.5c2.33 0 4.31-1.46 5.11-3.5H6.89c.8 2.04 2.78 3.5 5.11 3.5z"/>
-            </svg>
-          Emergency
-        </h3>
-        <p class="text-sm mb-3 opacity-90">Need immediate help?</p>
-        <button class="w-full bg-white text-red-600 font-bold py-2 rounded-lg hover:bg-red-50 transition">
-          Call 911
-        </button>
       </div>
 
       <!-- FAQ Section -->
@@ -1457,6 +1322,51 @@ $random_health_tip = $health_tips[array_rand($health_tips)];
             </div>
           </div>
         </div>
+      </div>
+
+      <!-- Mental Health Support Section -->
+      <div class="bg-gradient-to-br from-purple-500 via-purple-600 to-indigo-600 text-white rounded-2xl p-6 shadow-md hover:shadow-xl transition">
+        <div class="flex items-start gap-2 mb-4">
+          <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/>
+          </svg>
+          <div>
+            <h3 class="font-bold text-lg">Mental Health Support</h3>
+          </div>
+        </div>
+        
+        <div class="space-y-3 mb-4">
+          <p class="text-sm leading-relaxed opacity-95">
+            Your mental health matters. Access confidential counseling, wellness resources, and support whenever you need it.
+          </p>
+          
+          <!-- Quick Resources -->
+          <div class="grid grid-cols-2 gap-2">
+            <button onclick="openMentalHealthModal('counseling')" class="bg-white/20 hover:bg-white/30 backdrop-blur-sm p-3 rounded-lg transition text-left">
+              <div class="text-xs font-semibold mb-0.5">🧠 Counseling</div>
+              <div class="text-xs opacity-90">Book session</div>
+            </button>
+            
+            <button onclick="openMentalHealthModal('crisis')" class="bg-white/20 hover:bg-white/30 backdrop-blur-sm p-3 rounded-lg transition text-left">
+              <div class="text-xs font-semibold mb-0.5">🆘 Crisis Help</div>
+              <div class="text-xs opacity-90">Immediate support</div>
+            </button>
+            
+            <button onclick="openMentalHealthModal('wellness')" class="bg-white/20 hover:bg-white/30 backdrop-blur-sm p-3 rounded-lg transition text-left">
+              <div class="text-xs font-semibold mb-0.5">🧘 Wellness</div>
+              <div class="text-xs opacity-90">Self-care tips</div>
+            </button>
+            
+            <button onclick="openMentalHealthModal('assessment')" class="bg-white/20 hover:bg-white/30 backdrop-blur-sm p-3 rounded-lg transition text-left">
+              <div class="text-xs font-semibold mb-0.5">📋 Assessment</div>
+              <div class="text-xs opacity-90">Check-in</div>
+            </button>
+          </div>
+        </div>
+
+        <a href="studentmentalhealth.php" class="block w-full bg-white text-purple-600 font-semibold py-2.5 rounded-lg hover:bg-purple-50 transition text-center text-sm">
+          View All Resources
+        </a>
       </div>
     </div>
   </div>

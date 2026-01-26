@@ -96,3 +96,7 @@ CREATE TABLE IF NOT EXISTS `prescriptions` (
   KEY `idx_student_created` (`student_id`, `created_at`),
   KEY `idx_doctor_created` (`doctor_id`, `created_at`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+
+-- INSERT INTO users (fullname, email, institution_id, role, password_hash) 
+-- VALUES ('Admin', 'admin@gmail.com', 'admin1234', 'admin', '$2y$10$7VwOB4l2HrsOiXKqonT6SuZ5UE9.uc//aCRmbVZTu.QV4z5v7bxKC');

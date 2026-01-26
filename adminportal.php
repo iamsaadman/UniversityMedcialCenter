@@ -8,6 +8,62 @@
 </head>
 <body class="bg-gray-100 min-h-screen">
 
+  <!-- EMERGENCY BUTTON - Fixed position bottom left -->
+  <button id="emergencyBtn" class="fixed bottom-6 left-6 z-50 w-16 h-16 rounded-full bg-red-600 hover:bg-red-700 shadow-lg hover:shadow-xl transition transform hover:scale-110 flex items-center justify-center animate-pulse" title="Emergency Services">
+    <svg xmlns="http://www.w3.org/2000/svg" class="w-8 h-8 text-white" fill="white" viewBox="0 0 24 24">
+      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm3.5-9c.83 0 1.5-.67 1.5-1.5S16.33 8 15.5 8 14 8.67 14 9.5s.67 1.5 1.5 1.5zm-7 0c.83 0 1.5-.67 1.5-1.5S9.33 8 8.5 8 7 8.67 7 9.5 7.67 11 8.5 11zm3.5 6.5c2.33 0 4.31-1.46 5.11-3.5H6.89c.8 2.04 2.78 3.5 5.11 3.5z"/>
+    </svg>
+  </button>
+
+  <!-- EMERGENCY MODAL -->
+  <div id="emergencyModal" class="hidden fixed inset-0 bg-black bg-opacity-50 z-40 flex items-center justify-center">
+    <div class="bg-white rounded-3xl p-8 shadow-2xl w-full max-w-sm mx-4">
+      <div class="flex items-center justify-between mb-6">
+        <h2 class="text-2xl font-bold text-red-600">Emergency Services</h2>
+        <button id="closeModal" class="text-gray-600 hover:text-gray-800 text-2xl">&times;</button>
+      </div>
+      
+      <div class="space-y-4">
+        <div class="bg-red-50 border-l-4 border-red-600 p-4 rounded">
+          <p class="text-gray-700 font-semibold mb-2">Campus Emergency:</p>
+          <a href="tel:333" class="text-red-600 hover:text-red-700 font-bold text-lg">📞 333</a>
+        </div>
+        
+        <div class="bg-red-50 border-l-4 border-red-600 p-4 rounded">
+          <p class="text-gray-700 font-semibold mb-2">Crisis Hotline:</p>
+          <a href="tel:999" class="text-red-600 hover:text-red-700 font-bold text-lg">📞 999</a>
+        </div>
+      </div>
+      
+      <button id="closeModalBtn" class="w-full mt-6 bg-gray-600 hover:bg-gray-700 text-white py-2 px-4 rounded-lg font-semibold">Close</button>
+    </div>
+  </div>
+
+  <script>
+    const emergencyBtn = document.getElementById('emergencyBtn');
+    const emergencyModal = document.getElementById('emergencyModal');
+    const closeModal = document.getElementById('closeModal');
+    const closeModalBtn = document.getElementById('closeModalBtn');
+    
+    emergencyBtn.addEventListener('click', () => {
+      emergencyModal.classList.remove('hidden');
+    });
+    
+    closeModal.addEventListener('click', () => {
+      emergencyModal.classList.add('hidden');
+    });
+    
+    closeModalBtn.addEventListener('click', () => {
+      emergencyModal.classList.add('hidden');
+    });
+    
+    emergencyModal.addEventListener('click', (e) => {
+      if (e.target === emergencyModal) {
+        emergencyModal.classList.add('hidden');
+      }
+    });
+  </script>
+
   <!-- NAVBAR -->
   <nav class="bg-white shadow flex items-center justify-between px-6 py-4">
     <!-- Logo + Title -->
