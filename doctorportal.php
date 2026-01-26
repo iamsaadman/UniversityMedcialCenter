@@ -415,34 +415,67 @@ $month_name = date('F', mktime(0, 0, 0, $current_month, 1, $current_year));
       submitBtn.textContent = 'Saving...';
       feedback.textContent = '';
 
+      // Collect form data with proper validation
+      const studentId = document.getElementById('rxPatient').value;
+      const medications = document.getElementById('rxMedications').value;
+      
+      // Basic validation
+      if (!studentId) {
+        feedback.textContent = 'Please select a patient';
+        feedback.className = 'text-sm text-red-600';
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Save & notify student';
+        return;
+      }
+      
+      if (!medications.trim()) {
+        feedback.textContent = 'Please enter medications';
+        feedback.className = 'text-sm text-red-600';
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Save & notify student';
+        return;
+      }
+
       const payload = new URLSearchParams({
-        student_id: document.getElementById('rxPatient').value,
+        student_id: studentId,
         appointment_id: document.getElementById('rxAppointment').value,
         title: document.getElementById('rxTitle').value,
         diagnosis: document.getElementById('rxDiagnosis').value,
-        medications: document.getElementById('rxMedications').value,
+        medications: medications,
         instructions: document.getElementById('rxInstructions').value,
         follow_up_date: document.getElementById('rxFollowUp').value,
         complete_appointment: document.getElementById('rxComplete').checked ? '1' : '0'
       });
+
+      console.log('Sending prescription data:', Object.fromEntries(payload));
 
       fetch('create_prescription.php', {
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body: payload
       })
-      .then(r => r.json())
+      .then(r => {
+        console.log('Response status:', r.status);
+        if (!r.ok) {
+          throw new Error(`HTTP ${r.status}`);
+        }
+        return r.json();
+      })
       .then(data => {
+        console.log('Server response:', data);
         if (data.success) {
           form.reset();
           showToast('Prescription saved', 'Student has been notified.');
+          feedback.textContent = 'Prescription created successfully!';
+          feedback.className = 'text-sm text-green-600';
         } else {
           feedback.textContent = data.message || 'Unable to save prescription';
           feedback.className = 'text-sm text-red-600';
         }
       })
-      .catch(() => {
-        feedback.textContent = 'Network error';
+      .catch(error => {
+        console.error('Prescription error:', error);
+        feedback.textContent = 'Network or server error: ' + error.message;
         feedback.className = 'text-sm text-red-600';
       })
       .finally(() => {
@@ -845,10 +878,23 @@ $month_name = date('F', mktime(0, 0, 0, $current_month, 1, $current_year));
           <?php endforeach; ?>
         </select>
       </div>
+      <!-- Title -->
+      <div class="col-span-2 md:col-span-1">
+        <label class="text-xs font-semibold text-gray-600 mb-1 block">Prescription Title</label>
+        <input type="text" id="rxTitle" name="title" placeholder="Prescription title" class="border p-2 rounded focus:ring-2 focus:ring-green-400 w-full" value="Prescription">
+      </div>
+      <!-- Diagnosis -->
+      <div class="col-span-2 md:col-span-1">
+        <label class="text-xs font-semibold text-gray-600 mb-1 block">Diagnosis</label>
+        <input type="text" id="rxDiagnosis" name="diagnosis" placeholder="Diagnosis" class="border p-2 rounded focus:ring-2 focus:ring-green-400 w-full">
+      </div>
       <!-- Medications -->
       <div class="col-span-2">
         <label class="text-xs font-semibold text-gray-600 mb-1 block">Medications</label>
-        <textarea id="rxMedications" name="medications" placeholder="Type medication name..." class="border p-2 rounded focus:ring-2 focus:ring-green-400 w-full" rows="3" required></textarea>
+        <div class="medication-autocomplete">
+          <textarea id="rxMedications" name="medications" placeholder="Type medication name..." class="border p-2 rounded focus:ring-2 focus:ring-green-400 w-full" rows="3" required></textarea>
+          <div id="medicationSuggestions" class="medication-suggestions hidden"></div>
+        </div>
       </div>
       <!-- Instructions -->
       <textarea id="rxInstructions" name="instructions" placeholder="Instructions / advice" class="border p-2 rounded focus:ring-2 focus:ring-green-400 col-span-2" rows="2"></textarea>

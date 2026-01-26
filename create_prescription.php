@@ -10,6 +10,10 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'doctor') {
 }
 
 $doctor_id = (int) $_SESSION['user_id'];
+
+// Log incoming data for debugging
+error_log("Prescription POST data: " . json_encode($_POST));
+
 $appointment_id = isset($_POST['appointment_id']) && $_POST['appointment_id'] !== '' ? (int) $_POST['appointment_id'] : null;
 $student_id = isset($_POST['student_id']) ? (int) $_POST['student_id'] : 0;
 $title = trim($_POST['title'] ?? 'Prescription');
@@ -70,8 +74,9 @@ $stmt->bind_param(
 );
 
 if (!$stmt->execute()) {
+  error_log("Prescription creation failed: " . $stmt->error . " - SQL: " . $sql);
   http_response_code(500);
-  echo json_encode(['success' => false, 'message' => 'Failed to save prescription']);
+  echo json_encode(['success' => false, 'message' => 'Failed to save prescription: ' . $stmt->error]);
   exit();
 }
 
