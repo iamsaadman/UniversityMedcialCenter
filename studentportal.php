@@ -288,7 +288,7 @@ $random_health_tip = $health_tips[array_rand($health_tips)];
 
       <!-- Dropdown -->
       <div id="profileDropdown" class="absolute right-0 mt-2 w-48 bg-white border border-gray-200 rounded-xl shadow-lg hidden z-50">
-        <a href="profile.php" class="block px-4 py-2 hover:bg-blue-100 text-gray-700 hover:text-blue-700 transition">Edit Profile</a>
+        <a href="edit_profile.php" class="block px-4 py-2 hover:bg-blue-100 text-gray-700 hover:text-blue-700 transition">Edit Profile</a>
         <a href="login.php" class="block px-4 py-2 text-red-600 hover:bg-red-100 transition">Logout</a>
       </div>
     </div>
@@ -687,8 +687,6 @@ $random_health_tip = $health_tips[array_rand($health_tips)];
   <!-- Main Content Grid -->
   <div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
 
-    
-    
     <!-- Left Column (2/3 width) -->
     <div class="lg:col-span-2 space-y-8">
 

@@ -16,12 +16,16 @@ CREATE TABLE IF NOT EXISTS `users` (
   `institution_id` VARCHAR(50) NOT NULL,
   `role` ENUM('student','doctor','admin') NOT NULL,
   `password_hash` VARCHAR(255) NOT NULL,
+  `blood_type` VARCHAR(3) NULL,
+  `weight` FLOAT NULL,
+  `height` FLOAT NULL,
   `created_at` TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
   UNIQUE KEY `uniq_email` (`email`),
   UNIQUE KEY `uniq_institution_id` (`institution_id`),
   KEY `idx_role` (`role`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 
 -- Appointments table
 CREATE TABLE IF NOT EXISTS `appointments` (
