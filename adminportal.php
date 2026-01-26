@@ -1,3 +1,74 @@
+<?php
+session_start();
+
+/* TEMP admin session (REMOVE after login system is ready) */
+$_SESSION['role'] = $_SESSION['role'] ?? 'admin';
+$_SESSION['user_id'] = $_SESSION['user_id'] ?? 1;
+
+if ($_SESSION['role'] !== 'admin') {
+    die("Access denied");
+}
+$host = "localhost";
+$db   = "university_medical_center";
+$user = "root";
+$pass = "";
+$charset = "utf8mb4";
+
+$dsn = "mysql:host=$host;dbname=$db;charset=$charset";
+$options = [
+    PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION,
+    PDO::ATTR_DEFAULT_FETCH_MODE => PDO::FETCH_ASSOC,
+];
+
+try {
+    $pdo = new PDO($dsn, $user, $pass, $options);
+} catch (Exception $e) {
+    die("Database connection failed");
+}
+
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['user_id'], $_POST['role'])) {
+    $stmt = $pdo->prepare("UPDATE users SET role = ? WHERE id = ?");
+    $stmt->execute([$_POST['role'], $_POST['user_id']]);
+    header("Location: adminportal.php");
+    exit;
+}
+
+$stmt = $pdo->query("SELECT id, fullname, email, role FROM users ORDER BY created_at DESC");
+$users = $stmt->fetchAll();
+
+/* ADD USER (DOCTOR / ADMIN) */
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['add_user'])) {
+
+    $fullname = trim($_POST['fullname']);
+    $email = trim($_POST['email']);
+    $institution_id = trim($_POST['institution_id']);
+    $role = $_POST['role'];
+    $password_hash = password_hash($_POST['password'], PASSWORD_BCRYPT);
+
+    // Prevent duplicate email / institution_id
+    $check = $pdo->prepare("SELECT id FROM users WHERE email = ? OR institution_id = ?");
+    $check->execute([$email, $institution_id]);
+
+    if ($check->rowCount() === 0) {
+        $stmt = $pdo->prepare("
+            INSERT INTO users (fullname, email, institution_id, role, password_hash)
+            VALUES (?, ?, ?, ?, ?)
+        ");
+        $stmt->execute([
+            $fullname,
+            $email,
+            $institution_id,
+            $role,
+            $password_hash
+        ]);
+    }
+
+    header("Location: adminportal.php");
+    exit;
+}
+?>
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -106,104 +177,104 @@
     });
   </script>
 
-  <!-- ADMIN DASHBOARD HEADER -->
+  <!-- ADMIN DASHBOARD HEADER
   <section class="bg-gradient-to-r from-red-700 to-red-500 text-white p-8 rounded-b-3xl shadow">
     <h2 class="text-2xl font-bold">Admin Dashboard</h2>
     <p class="mt-2">Manage users, content, and system settings efficiently</p>
-  </section>
+  </section> -->
 
-  <!-- DASHBOARD CARDS -->
-  <section class="grid grid-cols-1 md:grid-cols-4 gap-6 p-6">
-    <div class="bg-white shadow rounded-xl p-6 border-t-4 border-red-700 relative">
-      <h3 class="text-gray-700 font-semibold">Total Students</h3>
-      <span class="absolute top-2 right-4 text-red-700 font-bold text-lg">120</span>
-    </div>
-    <div class="bg-white shadow rounded-xl p-6 border-t-4 border-green-700 relative">
-      <h3 class="text-gray-700 font-semibold">Total Doctors</h3>
-      <span class="absolute top-2 right-4 text-green-700 font-bold text-lg">45</span>
-    </div>
-    <div class="bg-white shadow rounded-xl p-6 border-t-4 border-blue-700 relative">
-      <h3 class="text-gray-700 font-semibold">This Month's Appointments</h3>
-      <span class="absolute top-2 right-4 text-blue-700 font-bold text-lg">75</span>
-    </div>
-    <div class="bg-white shadow rounded-xl p-6 border-t-4 border-purple-700 relative">
-      <h3 class="text-gray-700 font-semibold">Active Admins</h3>
-      <span class="absolute top-2 right-4 text-purple-700 font-bold text-lg">3</span>
-    </div>
-  </section>
+  <!-- ADD USER -->
+<section class="p-6">
+  <div class="bg-white p-6 rounded-xl shadow mb-6 max-w-full">
+    <h2 class="text-xl font-semibold mb-4">Add Doctor / Admin</h2>
+
+    <form method="POST" class="grid grid-cols-1 md:grid-cols-3 gap-4 w-full">
+      <input type="hidden" name="add_user">
+
+      <input required name="fullname" placeholder="Full Name"
+        class="border p-2 rounded w-full">
+
+      <input required name="email" type="email" placeholder="Email"
+        class="border p-2 rounded w-full">
+
+      <input required name="institution_id" placeholder="Institution ID"
+        class="border p-2 rounded w-full">
+
+      <select name="role" class="border p-2 rounded w-full">
+        <option value="doctor">Doctor</option>
+        <option value="admin">Admin</option>
+      </select>
+
+      <input required name="password" type="password" placeholder="Password"
+        class="border p-2 rounded w-full">
+
+      <button
+        class="bg-green-700 hover:bg-green-800 text-white px-4 py-2 rounded md:col-span-3 w-full">
+        Add User
+      </button>
+    </form>
+  </div>
+</section>
+
+
 
   <!-- MANAGE USERS -->
-  <section class="p-6 bg-gray-50 rounded-xl shadow mb-6">
-    <div class="flex justify-between items-center mb-4">
-      <h3 class="text-xl font-semibold">Manage Users</h3>
-      <div class="flex gap-3">
-        <button class="bg-blue-700 text-white px-4 py-2 rounded-xl hover:bg-blue-800">Add Student</button>
-        <button class="bg-green-700 text-white px-4 py-2 rounded-xl hover:bg-green-800">Add Doctor</button>
-      </div>
-    </div>
-    <div class="mb-4">
-      <input type="text" placeholder="Search users..." class="w-full p-2 border rounded-xl focus:outline-none focus:ring-2 focus:ring-red-700">
-    </div>
-    <table class="w-full table-auto border-collapse bg-white rounded-xl overflow-hidden shadow">
+  <section class="p-6">
+  <div class="bg-white p-6 rounded-xl shadow mb-6">
+    <h2 class="text-xl font-semibold mb-4">Manage Users</h2>
+
+    <table class="w-full border-collapse">
       <thead class="bg-red-600 text-white">
         <tr>
           <th class="p-3 text-left">Name</th>
           <th class="p-3 text-left">Role</th>
           <th class="p-3 text-left">Email</th>
           <th class="p-3 text-left">Status</th>
-          <th class="p-3 text-left">Actions</th>
+          <th class="p-3 text-left">Action</th>
         </tr>
       </thead>
+
       <tbody>
-        <tr class="border-b">
-          <td class="p-3">John Doe</td>
-          <td class="p-3">Student</td>
-          <td class="p-3">johndoe@example.com</td>
+      <?php foreach ($users as $user): ?>
+        <tr class="border-b hover:bg-gray-50">
+          <td class="p-3"><?= htmlspecialchars($user['fullname']) ?></td>
+
+          <td class="p-3">
+            <form method="POST">
+              <input type="hidden" name="user_id" value="<?= $user['id'] ?>">
+              <select name="role"
+                onchange="this.form.submit()"
+                class="border rounded px-2 py-1">
+                <option value="student" <?= $user['role']=='student'?'selected':'' ?>>Student</option>
+                <option value="doctor" <?= $user['role']=='doctor'?'selected':'' ?>>Doctor</option>
+                <option value="admin" <?= $user['role']=='admin'?'selected':'' ?>>Admin</option>
+              </select>
+            </form>
+          </td>
+
+          <td class="p-3"><?= htmlspecialchars($user['email']) ?></td>
+
           <td class="p-3 text-green-600 font-semibold">Active</td>
-          <td class="p-3 flex gap-2">
-            <button class="bg-yellow-600 px-2 py-1 rounded hover:bg-yellow-700 text-white">Edit</button>
-            <button class="bg-red-600 px-2 py-1 rounded hover:bg-red-700 text-white">Delete</button>
+
+          <td class="p-3">
+            <?php if ($user['id'] != $_SESSION['user_id']): ?>
+              <a href="?delete=<?= $user['id'] ?>"
+                onclick="return confirm('Delete user?')"
+                class="bg-red-600 text-white px-3 py-1 rounded hover:bg-red-700">
+                Delete
+              </a>
+            <?php else: ?>
+              <span class="text-gray-400">Current User</span>
+            <?php endif; ?>
           </td>
         </tr>
-        <tr class="border-b">
-          <td class="p-3">Dr. Smith</td>
-          <td class="p-3">Doctor</td>
-          <td class="p-3">drsmith@example.com</td>
-          <td class="p-3 text-green-600 font-semibold">Active</td>
-          <td class="p-3 flex gap-2">
-            <button class="bg-yellow-600 px-2 py-1 rounded hover:bg-yellow-700 text-white">Edit</button>
-            <button class="bg-red-600 px-2 py-1 rounded hover:bg-red-700 text-white">Delete</button>
-          </td>
-        </tr>
+      <?php endforeach; ?>
       </tbody>
     </table>
-  </section>
+  </div>
+</section>
 
-  <!-- REPORTS & STATISTICS -->
-  <section class="p-6 grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
-    <div class="bg-white p-6 shadow rounded-xl">
-      <h4 class="text-gray-700 font-semibold">Monthly Appointments</h4>
-      <p class="text-red-700 font-bold text-xl mt-2">75</p>
-      <p class="text-gray-500 mt-1 text-sm">↑ 12% from last month</p>
-    </div>
-    <div class="bg-white p-6 shadow rounded-xl">
-      <h4 class="text-gray-700 font-semibold">New Student Registration</h4>
-      <p class="text-green-700 font-bold text-xl mt-2">45</p>
-      <p class="text-gray-500 mt-1 text-sm">This semester</p>
-    </div>
-    <div class="bg-white p-6 shadow rounded-xl">
-      <h4 class="text-gray-700 font-semibold">Prescription Issued</h4>
-      <p class="text-blue-700 font-bold text-xl mt-2">30</p>
-      <p class="text-gray-500 mt-1 text-sm">This week</p>
-    </div>
-    <div class="bg-white p-6 shadow rounded-xl">
-      <h4 class="text-gray-700 font-semibold">Emergency Calls</h4>
-      <p class="text-red-700 font-bold text-xl mt-2">12</p>
-      <p class="text-gray-500 mt-1 text-sm">This week</p>
-    </div>
-  </section>
-
-  <!-- FAQ MANAGER -->
+  <!-- FAQ MANAGER
   <section class="p-6 bg-gray-50 rounded-xl shadow mb-6">
     <div class="flex justify-between items-center mb-4">
       <h3 class="text-xl font-semibold">FAQ Manager</h3>
@@ -214,37 +285,7 @@
       <div class="bg-white p-4 rounded-xl shadow">How to reset my password?</div>
       <div class="bg-white p-4 rounded-xl shadow">Where can I find emergency contacts?</div>
     </div>
-  </section>
-
-  <!-- EMERGENCY TIPS MANAGER -->
-  <section class="p-6 bg-gray-50 rounded-xl shadow mb-6">
-    <div class="flex justify-between items-center mb-4">
-      <h3 class="text-xl font-semibold">Emergency Tips Manager</h3>
-      <button class="bg-blue-700 text-white px-4 py-2 rounded-xl hover:bg-blue-800">Add New Guideline</button>
-    </div>
-    <div class="space-y-2">
-      <div class="bg-white p-4 rounded-xl shadow flex justify-between">
-        <span>Severe Injury Protocol</span>
-        <button class="bg-yellow-600 px-2 py-1 rounded hover:bg-yellow-700 text-white">Edit</button>
-      </div>
-      <div class="bg-white p-4 rounded-xl shadow flex justify-between">
-        <span>Mental Health Crisis</span>
-        <button class="bg-yellow-600 px-2 py-1 rounded hover:bg-yellow-700 text-white">Edit</button>
-      </div>
-      <div class="bg-white p-4 rounded-xl shadow flex justify-between">
-        <span>Non-Emergency Care</span>
-        <button class="bg-yellow-600 px-2 py-1 rounded hover:bg-yellow-700 text-white">Edit</button>
-      </div>
-    </div>
-  </section>
-
-  <!-- SYSTEM SETTINGS -->
-  <section class="p-6 mb-6">
-    <div class="bg-gradient-to-r from-orange-700 to-orange-500 p-6 rounded-xl shadow text-white">
-      <h3 class="text-xl font-semibold">System Settings</h3>
-      <p class="mt-2">Configure platform settings and preferences here.</p>
-    </div>
-  </section>
+  </section> -->
 
 </body>
 </html>

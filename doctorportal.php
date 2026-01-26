@@ -470,44 +470,37 @@ $month_name = date('F', mktime(0, 0, 0, $current_month, 1, $current_year));
 
   // Medication autocomplete
   const commonMedications = [
-    'Napa (Paracetamol 500mg)',
-    'Paracetamol 500mg',
-    'Paracetamol 650mg',
-    'Aspirin 75mg',
-    'Aspirin 300mg',
-    'Ibuprofen 200mg',
-    'Ibuprofen 400mg',
-    'Amoxicillin 500mg',
-    'Amoxicillin 250mg',
-    'Azithromycin 500mg',
-    'Azithromycin 250mg',
-    'Ciprofloxacin 500mg',
-    'Metronidazole 400mg',
-    'Omeprazole 20mg',
-    'Omeprazole 40mg',
-    'Ranitidine 150mg',
-    'Losartan 50mg',
-    'Amlodipine 5mg',
-    'Atorvastatin 20mg',
-    'Metformin 500mg',
-    'Insulin',
-    'Cetirizine 10mg',
-    'Loratadine 10mg',
-    'Montelukast 10mg',
-    'Salbutamol Inhaler',
-    'Prednisolone 5mg',
-    'Dexamethasone 0.5mg',
-    'Diclofenac 50mg',
-    'Tramadol 50mg',
-    'Codeine 30mg',
-    'Loperamide 2mg',
-    'Domperidone 10mg',
-    'Ondansetron 4mg',
-    'Vitamin D3 1000IU',
-    'Vitamin B Complex',
-    'Calcium 500mg',
-    'Iron Supplement',
-    'Folic Acid 5mg'
+    'Napa (Paracetamol 500mg)','Paracetamol 500mg','Paracetamol 650mg','Aspirin 75mg','Aspirin 300mg','Ibuprofen 200mg','Ibuprofen 400mg','Amoxicillin 500mg',
+    'Amoxicillin 250mg','Azithromycin 500mg','Azithromycin 250mg','Ciprofloxacin 500mg','Metronidazole 400mg','Omeprazole 20mg','Omeprazole 40mg','Ranitidine 150mg',
+    'Losartan 50mg','Amlodipine 5mg','Atorvastatin 20mg','Metformin 500mg','Insulin','Cetirizine 10mg','Loratadine 10mg','Montelukast 10mg','Salbutamol Inhaler',
+    'Prednisolone 5mg','Dexamethasone 0.5mg','Diclofenac 50mg','Tramadol 50mg','Codeine 30mg','Loperamide 2mg','Domperidone 10mg','Ondansetron 4mg','Vitamin D3 1000IU',
+    'Vitamin B Complex','Calcium 500mg','Iron Supplement','Folic Acid 5mg','Naproxen 250mg', 'Naproxen 500mg', 'Celecoxib 100mg', 'Celecoxib 200mg', 'Etoricoxib 60mg',
+    'Etoricoxib 90mg', 'Etoricoxib 120mg', 'Meloxicam 7.5mg', 'Meloxicam 15mg', 'Ketorolac 10mg', 'Ketorolac 30mg', 'Indomethacin 25mg', 'Indomethacin 50mg', 
+    'Aceclofenac 100mg', 'Nimesulide 100mg', 'Mefenamic Acid 250mg', 'Mefenamic Acid 500mg', 'Hyoscine Butylbromide 10mg', 'Baclofen 5mg', 'Baclofen 10mg', 
+    'Cyclobenzaprine 5mg', 'Cyclobenzaprine 10mg', 'Tizanidine 2mg', 'Tizanidine 4mg', 'Chlorzoxazone 250mg', 'Orphenadrine 35mg', 'Piroxicam 20mg', 'Flupirtine 100mg', 
+    'Tenoxicam 20mg', 'Nefopam 30mg','Cefixime 200mg', 'Cefixime 400mg', 'Cefuroxime 250mg', 'Cefuroxime 500mg', 'Flucloxacillin 250mg', 'Flucloxacillin 500mg', 
+    'Clarithromycin 250mg', 'Clarithromycin 500mg', 'Doxycycline 100mg', 'Levofloxacin 250mg', 'Levofloxacin 500mg', 'Levofloxacin 750mg', 'Moxifloxacin 400mg', 
+    'Cephalexin 250mg', 'Cephalexin 500mg', 'Nitrofurantoin 50mg', 'Nitrofurantoin 100mg', 'Linezolid 600mg', 'Rifaximin 200mg', 'Rifaximin 400mg', 'Rifaximin 550mg', 
+    'Acyclovir 200mg', 'Acyclovir 400mg', 'Acyclovir 800mg', 'Valacyclovir 500mg', 'Oseltamivir 75mg', 'Tinidazole 500mg', 'Secnidazole 1g', 'Albendazole 400mg', 
+    'Ivermectin 6mg', 'Ivermectin 12mg', 'Esomeprazole 20mg', 'Esomeprazole 40mg', 'Pantoprazole 20mg', 'Pantoprazole 40mg', 'Rabeprazole 20mg', 'Dexlansoprazole 30mg', 
+    'Dexlansoprazole 60mg', 'Famotidine 20mg', 'Famotidine 40mg', 'Sucralfate 1g', 'Magaldrate 480mg', 'Simethicone 40mg', 'Simethicone 80mg', 'Mebeverine 135mg', 
+    'Alverine 60mg', 'Pancreatin 10000IU', 'Pancreatin 25000IU', 'Lactulose Syrup', 'Bisacodyl 5mg', 'Psyllium Husk 3.5g', 'Activated Charcoal 250mg', 'Racecadotril 100mg', 
+    'Saccharomyces Boulardii 250mg', 'Probiotic Capsule', 'Metoclopramide 10mg', 'Valsartan 80mg', 'Valsartan 160mg', 'Telmisartan 20mg', 'Telmisartan 40mg', 
+    'Telmisartan 80mg', 'Olmesartan 20mg', 'Olmesartan 40mg', 'Bisoprolol 2.5mg', 'Bisoprolol 5mg', 'Carvedilol 6.25mg', 'Carvedilol 12.5mg', 'Nebivolol 5mg', 
+    'Ramipril 2.5mg', 'Ramipril 5mg', 'Enalapril 5mg', 'Enalapril 10mg', 'Hydralazine 25mg', 'Spironolactone 25mg', 'Spironolactone 50mg', 'Furosemide 40mg', 
+    'Torsemide 10mg', 'Hydrochlorothiazide 12.5mg', 'Clopidogrel 75mg', 'Warfarin 1mg', 'Warfarin 5mg', 'Rivaroxaban 10mg', 'Rivaroxaban 20mg', 'Apixaban 2.5mg', 
+    'Apixaban 5mg', 'Digoxin 0.25mg', 'Sitagliptin 50mg', 'Sitagliptin 100mg', 'Vildagliptin 50mg', 'Linagliptin 5mg', 'Dapagliflozin 5mg', 'Dapagliflozin 10mg', 
+    'Empagliflozin 10mg', 'Empagliflozin 25mg', 'Gliclazide 30mg', 'Gliclazide 60mg', 'Glimepiride 1mg', 'Glimepiride 2mg', 'Pioglitazone 15mg', 'Pioglitazone 30mg', 
+    'Fenofibrate 160mg', 'Rosuvastatin 5mg', 'Rosuvastatin 10mg', 'Rosuvastatin 20mg', 'Simvastatin 10mg', 'Simvastatin 20mg', 'Fexofenadine 60mg', 'Fexofenadine 120mg', 
+    'Fexofenadine 180mg', 'Desloratadine 5mg', 'Bilastine 20mg', 'Ebastine 10mg', 'Ebastine 20mg', 'Levocetirizine 5mg', 'Hydroxyzine 10mg', 'Hydroxyzine 25mg', 
+    'Guaifenesin 100mg', 'Dextromethorphan 10mg', 'Ambroxol 30mg', 'Bromhexine 8mg', 'Acetylcysteine 200mg', 'Acetylcysteine 600mg', 'Budesonide Inhaler', 
+    'Fluticasone Inhaler', 'Tiotropium Inhaler', 'Ipratropium Inhaler', 'Beclomethasone Nasal Spray', 'Oxymetazoline Nasal Spray', 'Saline Nasal Drops', 
+    'Pregabalin 50mg', 'Pregabalin 75mg', 'Pregabalin 150mg', 'Gabapentin 100mg', 'Gabapentin 300mg', 'Amitriptyline 10mg', 'Amitriptyline 25mg', 'Nortriptyline 25mg', 
+    'Escitalopram 5mg', 'Escitalopram 10mg', 'Sertraline 50mg', 'Fluoxetine 20mg', 'Paroxetine 20mg', 'Venlafaxine 75mg', 'Quetiapine 25mg', 'Quetiapine 100mg', 
+    'Olanzapine 5mg', 'Risperidone 1mg', 'Risperidone 2mg', 'Donepezil 5mg', 'Memantine 10mg', 'Levodopa 100mg', 'Carbidopa 25mg', 'Propranolol 10mg', 'Propranolol 40mg',
+    'Vitamin A 5000IU', 'Vitamin E 400IU', 'Vitamin K2 100mcg', 'Vitamin C 500mg', 'Vitamin C 1000mg', 'Zinc Sulfate 20mg', 'Magnesium Oxide 400mg', 'Calcium Citrate 500mg', 
+    'Potassium Chloride 600mg', 'Biotin 10mg', 'Coenzyme Q10 100mg', 'Glucosamine 500mg', 'Chondroitin 400mg', 'Omega-3 Fish Oil 1000mg', 'Cod Liver Oil', 'Gingko Biloba 60mg', 
+    'Ginseng 100mg', 'Evening Primrose Oil 1000mg', 'L-Methylfolate 800mcg', 'Alpha Lipoic Acid 600mg'
   ];
 
   function initMedicationAutocomplete() {
@@ -524,7 +517,7 @@ $month_name = date('F', mktime(0, 0, 0, $current_month, 1, $current_year));
       const lines = textBeforeCursor.split('\n');
       const currentLine = lines[lines.length - 1].trim();
 
-      if (currentLine.length < 2) {
+      if (currentLine.length < 1) {
         suggestionsDiv.classList.add('hidden');
         return;
       }
@@ -718,266 +711,218 @@ $month_name = date('F', mktime(0, 0, 0, $current_month, 1, $current_year));
       </div>
     </div>
 
-    <!-- Dashboard Stats Cards -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-      <!-- Today Appointments -->
-      <div class="bg-white rounded-2xl p-6 shadow-md hover:shadow-lg transition border-t-4 border-green-500">
-        <div class="flex justify-between items-start mb-4">
-          <div>
-            <p class="text-gray-600 text-sm font-semibold uppercase tracking-wide">Today Appointments</p>
-            <p class="text-3xl font-bold text-gray-900 mt-1"><?php echo $appointment_count; ?></p>
-          </div>
-          <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M8 7V3m8 4V3m-9 8h10m7 8H3a2 2 0 01-2-2V7a2 2 0 012-2h16a2 2 0 012 2v12a2 2 0 01-2 2z"/>
-            </svg>
-          </div>
-        </div>
-        <p class="text-gray-600 text-sm">Next appointments overview</p>
-      </div>
+    
 
-      <!-- Pending Reports -->
-      <div class="bg-white rounded-2xl p-6 shadow-md hover:shadow-lg transition border-t-4 border-yellow-500">
-        <div class="flex justify-between items-start mb-4">
-          <div>
-            <p class="text-gray-600 text-sm font-semibold uppercase tracking-wide">Pending Reports</p>
-            <p class="text-3xl font-bold text-gray-900 mt-1"><?php echo $pending_reports_count; ?></p>
-          </div>
-          <div class="w-12 h-12 bg-yellow-100 rounded-lg flex items-center justify-center">
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-yellow-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/>
-            </svg>
-          </div>
-        </div>
-        <p class="text-gray-600 text-sm">Reports to review</p>
-      </div>
-
-      <!-- Prescriptions Today -->
-      <div class="bg-white rounded-2xl p-6 shadow-md hover:shadow-lg transition border-t-4 border-blue-500">
-        <div class="flex justify-between items-start mb-4">
-          <div>
-            <p class="text-gray-600 text-sm font-semibold uppercase tracking-wide">Prescriptions Today</p>
-            <p class="text-3xl font-bold text-gray-900 mt-1">5</p>
-          </div>
-          <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-            <svg xmlns="http://www.w3.org/2000/svg" class="w-6 h-6 text-blue-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-              <path stroke-linecap="round" stroke-linejoin="round" d="M12 6.253v13m0-13C6.5 6.253 2 10.998 2 17s4.5 10.747 10 10.747c5.5 0 10-4.998 10-10.747S17.5 6.253 12 6.253z"/>
-            </svg>
-          </div>
-        </div>
-        <p class="text-gray-600 text-sm">Medicines prescribed</p>
-      </div>
+    <!-- Calendar Section (Reduced Height) -->
+<div class="bg-white rounded-2xl shadow-md p-4 mb-8">
+  <div class="flex justify-between items-center mb-4">
+    <div>
+      <h3 class="font-bold text-lg text-gray-900">Appointment Calendar</h3>
+      <p class="text-gray-600 text-sm mt-1">Click on appointments to view details</p>
     </div>
-
-    <!-- Calendar Section -->
-    <div class="bg-white rounded-2xl shadow-md p-6 mb-8">
-      <div class="flex justify-between items-center mb-6">
-        <div>
-          <h3 class="font-bold text-lg text-gray-900">Appointment Calendar</h3>
-          <p class="text-gray-600 text-sm mt-1">Click on appointments to view details</p>
-        </div>
-        <div class="flex gap-1">
-          <a href="?month=<?php echo ($current_month > 1 ? $current_month - 1 : 12); ?>&year=<?php echo ($current_month > 1 ? $current_year : $current_year - 1); ?>" 
-             class="bg-gray-200 hover:bg-gray-300 px-2 py-1 rounded text-sm">← Prev</a>
-          <span class="px-2 py-1 font-semibold text-sm"><?php echo "$month_name $current_year"; ?></span>
-          <a href="?month=<?php echo ($current_month < 12 ? $current_month + 1 : 1); ?>&year=<?php echo ($current_month < 12 ? $current_year : $current_year + 1); ?>" 
-             class="bg-gray-200 hover:bg-gray-300 px-2 py-1 rounded text-sm">Next →</a>
-        </div>
-      </div>
-
-      <!-- Calendar Grid -->
-      <div class="grid grid-cols-7 gap-1 bg-gray-50 p-3 rounded-xl">
-        <!-- Day headers -->
-        <div class="font-bold text-center py-2 bg-gradient-to-b from-green-50 to-emerald-50 rounded text-xs text-green-700">Sun</div>
-        <div class="font-bold text-center py-2 bg-gradient-to-b from-green-50 to-emerald-50 rounded text-xs text-green-700">Mon</div>
-        <div class="font-bold text-center py-2 bg-gradient-to-b from-green-50 to-emerald-50 rounded text-xs text-green-700">Tue</div>
-        <div class="font-bold text-center py-2 bg-gradient-to-b from-green-50 to-emerald-50 rounded text-xs text-green-700">Wed</div>
-        <div class="font-bold text-center py-2 bg-gradient-to-b from-green-50 to-emerald-50 rounded text-xs text-green-700">Thu</div>
-        <div class="font-bold text-center py-2 bg-gradient-to-b from-green-50 to-emerald-50 rounded text-xs text-green-700">Fri</div>
-        <div class="font-bold text-center py-2 bg-gradient-to-b from-green-50 to-emerald-50 rounded text-xs text-green-700">Sat</div>
-
-        <!-- Empty cells for days before month starts -->
-        <?php for ($i = 0; $i < $first_day; $i++): ?>
-          <div class="p-1 bg-white rounded min-h-16"></div>
-        <?php endfor; ?>
-
-        <!-- Days of the month -->
-        <?php for ($day = 1; $day <= $days_in_month; $day++): 
-          $date_str = sprintf("%04d-%02d-%02d", $current_year, $current_month, $day);
-          $today_str = date('Y-m-d');
-          $is_today = ($date_str === $today_str);
-          $day_appointments = isset($appointments_by_date[$date_str]) ? $appointments_by_date[$date_str] : [];
-          $apt_count = count($day_appointments);
-        ?>
-          <div class="p-2 border rounded-lg min-h-16 <?php echo $is_today ? 'bg-gradient-to-br from-green-50 to-emerald-50 border-green-400 border-2' : 'bg-white border-gray-200'; ?> hover:shadow-md transition">
-            <!-- Date number -->
-            <div class="font-bold text-xs mb-1 <?php echo $is_today ? 'text-green-700' : 'text-gray-700'; ?>">
-              <?php echo $day; ?>
-            </div>
-
-            <!-- Appointments for this day -->
-            <div class="space-y-0.5 text-xs">
-              <?php if ($apt_count > 0): ?>
-                <?php foreach ($day_appointments as $apt): 
-                  $status = $apt['status'] ?? 'pending';
-                  $card_class = 'bg-gradient-to-r ';
-                  $hover_class = 'hover:opacity-80';
-                  
-                  if ($status === 'completed') {
-                    $card_class .= 'from-green-100 to-green-200 text-green-800';
-                  } else if ($status === 'cancelled') {
-                    $card_class .= 'from-red-100 to-red-200 text-red-800';
-                  } else if ($status === 'confirmed') {
-                    $card_class .= 'from-blue-100 to-blue-200 text-blue-800';
-                  } else if ($status === 'pending') {
-                    $card_class .= 'from-amber-100 to-amber-200 text-amber-800';
-                  } else {
-                    $card_class .= 'from-gray-100 to-gray-200 text-gray-800';
-                  }
-                ?>
-                  <div class="<?php echo $card_class; ?> p-1 rounded cursor-pointer <?php echo $hover_class; ?> appointment-card font-medium" 
-                       onclick="openAppointmentDetails(<?php echo $apt['id']; ?>)"
-                       title="<?php echo htmlspecialchars($apt['patient_name']); ?> - <?php echo date('h:i A', strtotime($apt['appointment_time'])); ?> (<?php echo ucfirst($status); ?>)">
-                    <div class="font-semibold truncate text-xs"><?php echo htmlspecialchars(substr($apt['patient_name'], 0, 9)); ?></div>
-                    <div class="text-xs leading-tight"><?php echo date('h:i A', strtotime($apt['appointment_time'])); ?></div>
-                  </div>
-                <?php endforeach; ?>
-              <?php else: ?>
-                <div class="text-gray-400">—</div>
-              <?php endif; ?>
-            </div>
-          </div>
-        <?php endfor; ?>
-      </div>
-
-      </div>
-
-      <!-- Legend -->
-      <div class="mt-4 pt-4 border-t flex flex-wrap gap-4 text-sm">
-        <div class="flex items-center gap-2">
-          <div class="w-4 h-4 bg-gradient-to-r from-green-100 to-green-200 border border-green-400 rounded"></div>
-          <span class="text-gray-700">Completed</span>
-        </div>
-        <div class="flex items-center gap-2">
-          <div class="w-4 h-4 bg-gradient-to-r from-blue-100 to-blue-200 border border-blue-400 rounded"></div>
-          <span class="text-gray-700">Confirmed</span>
-        </div>
-        <div class="flex items-center gap-2">
-          <div class="w-4 h-4 bg-gradient-to-r from-amber-100 to-amber-200 border border-amber-400 rounded"></div>
-          <span class="text-gray-700">Pending</span>
-        </div>
-        <div class="flex items-center gap-2">
-          <div class="w-4 h-4 bg-gradient-to-r from-red-100 to-red-200 border border-red-400 rounded"></div>
-          <span class="text-gray-700">Cancelled</span>
-        </div>
-        <div class="flex items-center gap-2">
-          <div class="w-4 h-4 bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-400 rounded"></div>
-          <span class="text-gray-700">Today</span>
-        </div>
-      </div>
+    <div class="flex gap-1">
+      <a href="?month=<?php echo ($current_month > 1 ? $current_month - 1 : 12); ?>&year=<?php echo ($current_month > 1 ? $current_year : $current_year - 1); ?>" 
+         class="bg-gray-200 hover:bg-gray-300 px-2 py-1 rounded text-sm">← Prev</a>
+      <span class="px-2 py-1 font-semibold text-sm"><?php echo "$month_name $current_year"; ?></span>
+      <a href="?month=<?php echo ($current_month < 12 ? $current_month + 1 : 1); ?>&year=<?php echo ($current_month < 12 ? $current_year : $current_year + 1); ?>" 
+         class="bg-gray-200 hover:bg-gray-300 px-2 py-1 rounded text-sm">Next →</a>
     </div>
+  </div>
 
-    <!-- Prescribe Medicine Form -->
-    <div class="bg-white rounded-2xl shadow-md p-6 mb-8">
-      <h3 class="font-bold text-lg text-gray-900 mb-4">Prescribe Medicine</h3>
-      <form id="prescriptionForm" class="grid gap-4 md:grid-cols-2">
-        <div class="col-span-2 md:col-span-1">
-          <label class="text-xs font-semibold text-gray-600 mb-1 block">Patient (from today’s list)</label>
-          <select id="rxPatient" name="student_id" class="w-full border p-2 rounded focus:ring-2 focus:ring-green-400" required>
-            <option value="">Select patient</option>
-            <?php foreach ($patient_options as $pid => $pname): ?>
-              <option value="<?php echo (int)$pid; ?>"><?php echo htmlspecialchars($pname); ?></option>
-            <?php endforeach; ?>
-          </select>
-        </div>
-        <div class="col-span-2 md:col-span-1">
-          <label class="text-xs font-semibold text-gray-600 mb-1 block">Link to appointment (optional)</label>
-          <select id="rxAppointment" name="appointment_id" class="w-full border p-2 rounded focus:ring-2 focus:ring-green-400">
-            <option value="">Not linked</option>
-            <?php foreach ($all_appointments as $apt): ?>
-              <option value="<?php echo (int)$apt['id']; ?>">
-                <?php echo htmlspecialchars($apt['patient_name']); ?> — <?php echo date('M d, Y', strtotime($apt['appointment_date'])); ?> at <?php echo date('h:i A', strtotime($apt['appointment_time'])); ?>
-              </option>
-            <?php endforeach; ?>
-          </select>
-        </div>
-        <input type="text" id="rxTitle" name="title" placeholder="Title" class="border p-2 rounded focus:ring-2 focus:ring-green-400 col-span-2" value="Prescription">
-        <input type="text" id="rxDiagnosis" name="diagnosis" placeholder="Diagnosis" class="border p-2 rounded focus:ring-2 focus:ring-green-400 col-span-2">
-        <div class="col-span-2">
-          <label class="text-xs font-semibold text-gray-600 mb-1 block">Medications</label>
-          <div class="medication-autocomplete">
-            <textarea id="rxMedications" name="medications" placeholder="Type medication name (e.g., Napa, Paracetamol). Press Enter to add more." class="border p-2 rounded focus:ring-2 focus:ring-green-400 w-full" rows="3" required></textarea>
-            <div id="medicationSuggestions" class="medication-suggestions hidden"></div>
-          </div>
-          <p class="text-xs text-gray-500 mt-1">Start typing to see suggestions. Add dosage after medicine name.</p>
-        </div>
-        <textarea id="rxInstructions" name="instructions" placeholder="Instructions / advice" class="border p-2 rounded focus:ring-2 focus:ring-green-400 col-span-2" rows="2"></textarea>
-        <div class="col-span-2 flex items-center gap-3">
-          <input type="date" id="rxFollowUp" name="follow_up_date" class="border p-2 rounded focus:ring-2 focus:ring-green-400">
-          <label class="flex items-center gap-2 text-sm text-gray-700">
-            <input type="checkbox" id="rxComplete" name="complete_appointment" class="accent-green-600"> Mark appointment completed
-          </label>
-        </div>
-        <div class="col-span-2 flex items-center gap-3">
-          <button id="rxSubmit" type="submit" class="bg-green-600 text-white py-2 px-5 rounded hover:bg-green-700 transition">Save & notify student</button>
-          <span id="rxFeedback" class="text-sm text-gray-600"></span>
-        </div>
-      </form>
-    </div>
+  <!-- Calendar Grid -->
+  <div class="grid grid-cols-7 gap-1 bg-gray-50 p-2 rounded-xl">
+    <!-- Day headers -->
+    <?php 
+    $days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+    foreach($days as $d): ?>
+      <div class="font-bold text-center py-1 bg-gradient-to-b from-green-50 to-emerald-50 rounded text-xs text-green-700"><?php echo $d; ?></div>
+    <?php endforeach; ?>
 
-    <!-- Suggest Medical Tests -->
-    <div class="bg-white rounded-2xl shadow-md p-6 mb-8">
-      <h3 class="font-bold text-lg text-gray-900 mb-4">Suggest Medical Tests</h3>
-      <form id="testRequestForm" class="grid gap-4 md:grid-cols-3">
-        <div class="md:col-span-1 col-span-3">
-          <label class="block text-xs font-semibold text-gray-600 mb-1">Patient</label>
-          <select id="testPatient" name="student_id" class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-400" required>
-            <option value="">Select patient</option>
-            <?php foreach ($patient_options as $pid => $pname): ?>
-              <option value="<?php echo (int)$pid; ?>"><?php echo htmlspecialchars($pname); ?></option>
+    <!-- Empty cells before month starts -->
+    <?php for ($i = 0; $i < $first_day; $i++): ?>
+      <div class="p-1 bg-white rounded min-h-12"></div>
+    <?php endfor; ?>
+
+    <!-- Days -->
+    <?php for ($day = 1; $day <= $days_in_month; $day++): 
+      $date_str = sprintf("%04d-%02d-%02d", $current_year, $current_month, $day);
+      $today_str = date('Y-m-d');
+      $is_today = ($date_str === $today_str);
+      $day_appointments = isset($appointments_by_date[$date_str]) ? $appointments_by_date[$date_str] : [];
+      $apt_count = count($day_appointments);
+    ?>
+      <div class="p-1 border rounded-lg min-h-12 <?php echo $is_today ? 'bg-gradient-to-br from-green-50 to-emerald-50 border-green-400 border-2' : 'bg-white border-gray-200'; ?> hover:shadow-md transition">
+        <div class="font-bold text-xs mb-1 <?php echo $is_today ? 'text-green-700' : 'text-gray-700'; ?>">
+          <?php echo $day; ?>
+        </div>
+
+        <div class="space-y-0.5 text-xs">
+          <?php if ($apt_count > 0): ?>
+            <?php foreach ($day_appointments as $apt): 
+              $status = $apt['status'] ?? 'pending';
+              $card_class = 'bg-gradient-to-r ';
+              $hover_class = 'hover:opacity-80';
+
+              if ($status === 'completed') {
+                $card_class .= 'from-green-100 to-green-200 text-green-800';
+              } else if ($status === 'cancelled') {
+                $card_class .= 'from-red-100 to-red-200 text-red-800';
+              } else if ($status === 'confirmed') {
+                $card_class .= 'from-blue-100 to-blue-200 text-blue-800';
+              } else if ($status === 'pending') {
+                $card_class .= 'from-amber-100 to-amber-200 text-amber-800';
+              } else {
+                $card_class .= 'from-gray-100 to-gray-200 text-gray-800';
+              }
+            ?>
+              <div class="<?php echo $card_class; ?> p-1 rounded cursor-pointer <?php echo $hover_class; ?> appointment-card font-medium" 
+                   onclick="openAppointmentDetails(<?php echo $apt['id']; ?>)"
+                   title="<?php echo htmlspecialchars($apt['patient_name']); ?> - <?php echo date('h:i A', strtotime($apt['appointment_time'])); ?> (<?php echo ucfirst($status); ?>)">
+                <div class="font-semibold truncate text-xs"><?php echo htmlspecialchars(substr($apt['patient_name'], 0, 9)); ?></div>
+                <div class="text-xs leading-tight"><?php echo date('h:i A', strtotime($apt['appointment_time'])); ?></div>
+              </div>
             <?php endforeach; ?>
-          </select>
+          <?php else: ?>
+            <div class="text-gray-400">—</div>
+          <?php endif; ?>
         </div>
-        <div class="md:col-span-1 col-span-3">
-          <label class="block text-xs font-semibold text-gray-600 mb-1">Test Type</label>
-          <select id="testType" name="test_type" class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-400" required>
-            <option value="Blood Test">Blood Test</option>
-            <option value="X-Ray">X-Ray</option>
-            <option value="MRI">MRI</option>
-            <option value="CT Scan">CT Scan</option>
-            <option value="ECG">ECG</option>
-            <option value="Ultrasound">Ultrasound</option>
-          </select>
-        </div>
-        <div class="md:col-span-1 col-span-3">
-          <label class="block text-xs font-semibold text-gray-600 mb-1">Priority</label>
-          <select id="testPriority" name="priority" class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-400" required>
-            <option value="Normal">Normal</option>
-            <option value="Urgent">Urgent</option>
-            <option value="Critical">Critical</option>
-          </select>
-        </div>
-        <div class="col-span-3">
-          <label class="block text-xs font-semibold text-gray-600 mb-1">Linked Appointment (optional)</label>
-          <select id="testAppointment" name="appointment_id" class="w-full border p-2 rounded focus:ring-2 focus:ring-green-400">
-            <option value="">Not linked</option>
-            <?php foreach ($all_appointments as $apt): ?>
-              <option value="<?php echo (int)$apt['id']; ?>">
-                <?php echo htmlspecialchars($apt['patient_name']); ?> — <?php echo date('M d, Y', strtotime($apt['appointment_date'])); ?> at <?php echo date('h:i A', strtotime($apt['appointment_time'])); ?>
-              </option>
-            <?php endforeach; ?>
-          </select>
-        </div>
-        <div class="col-span-3">
-          <label class="block text-xs font-semibold text-gray-600 mb-1">Notes</label>
-          <textarea id="testNotes" name="notes" placeholder="Add preparation details or instructions" class="w-full border p-2 rounded focus:ring-2 focus:ring-green-400" rows="3"></textarea>
-        </div>
-        <div class="col-span-3 flex items-center gap-3">
-          <button id="testRequestSubmit" type="submit" class="bg-green-600 text-white py-2 px-5 rounded hover:bg-green-700 transition">Request Test</button>
-          <span id="testRequestFeedback" class="text-sm text-gray-600"></span>
-        </div>
-      </form>
+      </div>
+    <?php endfor; ?>
+  </div>
+
+  <!-- Legend -->
+  <div class="mt-4 pt-4 border-t flex flex-wrap gap-4 text-sm">
+    <div class="flex items-center gap-2">
+      <div class="w-4 h-4 bg-gradient-to-r from-green-100 to-green-200 border border-green-400 rounded"></div>
+      <span class="text-gray-700">Completed</span>
     </div>
+    <div class="flex items-center gap-2">
+      <div class="w-4 h-4 bg-gradient-to-r from-blue-100 to-blue-200 border border-blue-400 rounded"></div>
+      <span class="text-gray-700">Confirmed</span>
+    </div>
+    <div class="flex items-center gap-2">
+      <div class="w-4 h-4 bg-gradient-to-r from-amber-100 to-amber-200 border border-amber-400 rounded"></div>
+      <span class="text-gray-700">Pending</span>
+    </div>
+    <div class="flex items-center gap-2">
+      <div class="w-4 h-4 bg-gradient-to-r from-red-100 to-red-200 border border-red-400 rounded"></div>
+      <span class="text-gray-700">Cancelled</span>
+    </div>
+    <div class="flex items-center gap-2">
+      <div class="w-4 h-4 bg-gradient-to-br from-green-50 to-emerald-50 border-2 border-green-400 rounded"></div>
+      <span class="text-gray-700">Today</span>
+    </div>
+  </div>
+</div>
+
+
+    <!-- FORMS CONTAINER -->
+<div class="grid gap-6 md:grid-cols-2">
+
+  <!-- Prescribe Medicine Form -->
+  <div class="bg-white rounded-2xl shadow-md p-6">
+    <h3 class="font-bold text-lg text-gray-900 mb-4">Prescribe Medicine</h3>
+    <form id="prescriptionForm" class="grid gap-4 md:grid-cols-2">
+      <!-- Patient -->
+      <div class="col-span-2 md:col-span-1">
+        <label class="text-xs font-semibold text-gray-600 mb-1 block">Patient (from today’s list)</label>
+        <select id="rxPatient" name="student_id" class="w-full border p-2 rounded focus:ring-2 focus:ring-green-400" required>
+          <option value="">Select patient</option>
+          <?php foreach ($patient_options as $pid => $pname): ?>
+            <option value="<?php echo (int)$pid; ?>"><?php echo htmlspecialchars($pname); ?></option>
+          <?php endforeach; ?>
+        </select>
+      </div>
+      <!-- Appointment -->
+      <div class="col-span-2 md:col-span-1">
+        <label class="text-xs font-semibold text-gray-600 mb-1 block">Link to appointment (optional)</label>
+        <select id="rxAppointment" name="appointment_id" class="w-full border p-2 rounded focus:ring-2 focus:ring-green-400">
+          <option value="">Not linked</option>
+          <?php foreach ($all_appointments as $apt): ?>
+            <option value="<?php echo (int)$apt['id']; ?>">
+              <?php echo htmlspecialchars($apt['patient_name']); ?> — <?php echo date('M d, Y', strtotime($apt['appointment_date'])); ?> at <?php echo date('h:i A', strtotime($apt['appointment_time'])); ?>
+            </option>
+          <?php endforeach; ?>
+        </select>
+      </div>
+      <!-- Medications -->
+      <div class="col-span-2">
+        <label class="text-xs font-semibold text-gray-600 mb-1 block">Medications</label>
+        <textarea id="rxMedications" name="medications" placeholder="Type medication name..." class="border p-2 rounded focus:ring-2 focus:ring-green-400 w-full" rows="3" required></textarea>
+      </div>
+      <!-- Instructions -->
+      <textarea id="rxInstructions" name="instructions" placeholder="Instructions / advice" class="border p-2 rounded focus:ring-2 focus:ring-green-400 col-span-2" rows="2"></textarea>
+      <!-- Follow-up & Complete -->
+      <div class="col-span-2 flex items-center gap-3">
+        <input type="date" id="rxFollowUp" name="follow_up_date" class="border p-2 rounded focus:ring-2 focus:ring-green-400">
+        <label class="flex items-center gap-2 text-sm text-gray-700">
+          <input type="checkbox" id="rxComplete" name="complete_appointment" class="accent-green-600"> Mark appointment completed
+        </label>
+      </div>
+      <!-- Submit -->
+      <div class="col-span-2 flex items-center gap-3">
+        <button id="rxSubmit" type="submit" class="bg-green-600 text-white py-2 px-5 rounded hover:bg-green-700 transition">Save & notify student</button>
+        <span id="rxFeedback" class="text-sm text-gray-600"></span>
+      </div>
+    </form>
+  </div>
+
+  <!-- Suggest Medical Tests Form -->
+  <div class="bg-white rounded-2xl shadow-md p-6">
+    <h3 class="font-bold text-lg text-gray-900 mb-4">Suggest Medical Tests</h3>
+    <form id="testRequestForm" class="grid gap-4 md:grid-cols-3">
+      <div class="md:col-span-1 col-span-3">
+        <label class="block text-xs font-semibold text-gray-600 mb-1">Patient</label>
+        <select id="testPatient" name="student_id" class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-400" required>
+          <option value="">Select patient</option>
+          <?php foreach ($patient_options as $pid => $pname): ?>
+            <option value="<?php echo (int)$pid; ?>"><?php echo htmlspecialchars($pname); ?></option>
+          <?php endforeach; ?>
+        </select>
+      </div>
+      <div class="md:col-span-1 col-span-3">
+        <label class="block text-xs font-semibold text-gray-600 mb-1">Test Type</label>
+        <select id="testType" name="test_type" class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-400" required>
+          <option value="Blood Test">Blood Test</option>
+          <option value="X-Ray">X-Ray</option>
+          <option value="MRI">MRI</option>
+          <option value="CT Scan">CT Scan</option>
+          <option value="ECG">ECG</option>
+          <option value="Ultrasound">Ultrasound</option>
+        </select>
+      </div>
+      <div class="md:col-span-1 col-span-3">
+        <label class="block text-xs font-semibold text-gray-600 mb-1">Priority</label>
+        <select id="testPriority" name="priority" class="w-full border p-2 rounded focus:ring-2 focus:ring-blue-400" required>
+          <option value="Normal">Normal</option>
+          <option value="Urgent">Urgent</option>
+          <option value="Critical">Critical</option>
+        </select>
+      </div>
+      <div class="col-span-3">
+        <label class="block text-xs font-semibold text-gray-600 mb-1">Linked Appointment (optional)</label>
+        <select id="testAppointment" name="appointment_id" class="w-full border p-2 rounded focus:ring-2 focus:ring-green-400">
+          <option value="">Not linked</option>
+          <?php foreach ($all_appointments as $apt): ?>
+            <option value="<?php echo (int)$apt['id']; ?>">
+              <?php echo htmlspecialchars($apt['patient_name']); ?> — <?php echo date('M d, Y', strtotime($apt['appointment_date'])); ?> at <?php echo date('h:i A', strtotime($apt['appointment_time'])); ?>
+            </option>
+          <?php endforeach; ?>
+        </select>
+      </div>
+      <div class="col-span-3">
+        <label class="block text-xs font-semibold text-gray-600 mb-1">Notes</label>
+        <textarea id="testNotes" name="notes" placeholder="Add preparation details or instructions" class="w-full border p-2 rounded focus:ring-2 focus:ring-green-400" rows="3"></textarea>
+      </div>
+      <div class="col-span-3 flex items-center gap-3">
+        <button id="testRequestSubmit" type="submit" class="bg-green-600 text-white py-2 px-5 rounded hover:bg-green-700 transition">Request Test</button>
+        <span id="testRequestFeedback" class="text-sm text-gray-600"></span>
+      </div>
+    </form>
+  </div>
+
+</div>
+
 
     <!-- Quick Actions Section -->
   </section>
